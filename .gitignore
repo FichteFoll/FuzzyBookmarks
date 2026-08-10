@@ -1,5 +1,5 @@
+# Artifacts and caches
+.pnpm-store/
 node_modules/
 dist/
 web-ext-artifacts/
-*.sublime-workspace
-/.init.todo.md
