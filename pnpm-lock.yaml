@@ -8,19 +8,22 @@ importers:
 
   .:
     dependencies:
-      fuzzysort:
-        specifier: ^3.1.0
-        version: 3.1.0
-    devDependencies:
-      '@eslint/js':
-        specifier: ^10.0.1
-        version: 10.0.1(eslint@10.8.1)
       '@types/firefox-webext-browser':
         specifier: ^143.0.0
         version: 143.0.0
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      fuzzysort:
+        specifier: ^3.1.0
+        version: 3.1.0
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+    devDependencies:
+      '@eslint/js':
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@10.8.1)
       eslint:
         specifier: ^10.8.1
         version: 10.8.1
@@ -30,9 +33,6 @@ importers:
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
-      typescript:
-        specifier: ~6.0.3
-        version: 6.0.3
       typescript-eslint:
         specifier: ^8.66.0
         version: 8.66.0(eslint@10.8.1)(typescript@6.0.3)
