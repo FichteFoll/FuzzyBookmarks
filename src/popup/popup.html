@@ -6,7 +6,32 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <p id="status">popup works</p>
+    <div id="bookmark-selector" hidden></div>
+    <header class="page-info">
+      <img id="favicon" alt="" />
+      <h1 id="page-title"></h1>
+    </header>
+    <p class="meta">
+      <span id="meta-folder"></span>
+      <span id="meta-date"></span>
+    </p>
+    <input
+      id="folder-input"
+      type="text"
+      placeholder="Folder..."
+      autocomplete="off"
+    />
+    <ul id="folder-list" role="listbox"></ul>
+    <input
+      id="title-input"
+      type="text"
+      placeholder="Title..."
+      autocomplete="off"
+    />
+    <div class="button-bar">
+      <button id="btn-remove" type="button">Remove</button>
+      <button id="btn-commit" type="button">Create</button>
+    </div>
     <script type="module" src="main.js"></script>
   </body>
 </html>
