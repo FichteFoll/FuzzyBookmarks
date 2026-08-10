@@ -19,11 +19,7 @@ import {
   rememberSelection,
 } from "../lib/query-memory";
 import { getSettings } from "../lib/settings";
-import {
-  setupFolderPicker,
-  type FolderPickerHandle,
-  type PickerItem,
-} from "./folder-picker";
+import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
 import { derivePopupModel, type PopupModel } from "./model";
 import {
   buildCommitInput,
@@ -38,12 +34,6 @@ function getElement<T extends HTMLElement>(id: string): T {
     throw new Error(`Missing #${id} element in popup.html`);
   }
   return element as T;
-}
-
-function describeSelection(item: PickerItem | null): string {
-  if (!item) return "";
-  if (item.kind === "create") return item.title;
-  return item.entry.path;
 }
 
 interface CommitContext {
@@ -196,10 +186,11 @@ async function initPopup(): Promise<void> {
   const folderById = new Map<string, FolderEntry>(
     folders.map((folder) => [folder.id, folder]),
   );
-  const metaFolder = getElement("meta-folder");
-  metaFolder.textContent = model.folderId
-    ? (folderById.get(model.folderId)?.path ?? "")
-    : "";
+  const currentLocation = getElement("current-location");
+  if (model.folderId) {
+    currentLocation.textContent = `Current: ${folderById.get(model.folderId)?.path ?? ""}`;
+    currentLocation.removeAttribute("hidden");
+  }
 
   const picker = setupFolderPicker({
     input: getElement<HTMLInputElement>("folder-input"),
@@ -207,9 +198,6 @@ async function initPopup(): Promise<void> {
     folders,
     currentFolderId: model.folderId,
     recentFolderIds,
-    onSelectionChange: (item) => {
-      metaFolder.textContent = describeSelection(item);
-    },
   });
 
   if (url === null) return;

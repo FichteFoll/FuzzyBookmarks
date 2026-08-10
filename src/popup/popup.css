@@ -59,10 +59,13 @@ body {
   margin: 4px 0;
 }
 
-#meta-folder {
+#current-location {
+  font-size: 0.8rem;
+  color: var(--muted-fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin: 4px 0;
 }
 
 #meta-date {
