@@ -15,6 +15,11 @@ Existing bookmarks are edited or moved instead of duplicated.
 
 This addon was written with AI assistance.
 
+The toolbar icon reflects the current page's state:
+a filled bookmark when the page is bookmarked,
+and a monochrome outline that follows the browser's light or dark theme
+when it is not.
+
 ## Usage
 
 Open the popup on the page you want to bookmark;
