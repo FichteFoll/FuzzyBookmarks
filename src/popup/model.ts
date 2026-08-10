@@ -62,35 +62,3 @@ export async function loadPopupModel(): Promise<PopupModel> {
   const bookmarks = await browser.bookmarks.search({ url: activeTab.url });
   return derivePopupModel(activeTab, bookmarks);
 }
-
-// Bookmark root node ids are stable across profiles and locales;
-// aliasing by id (rather than title) keeps paths correct
-// even for renamed or localized roots.
-// This mirrors the root-alias rule that will live in src/lib/folders.ts (C2);
-// duplicated here only because that module does not exist yet in this worktree.
-const ROOT_ALIASES: Record<string, string> = {
-  menu________: "Menu",
-  toolbar_____: "Toolbar",
-  unfiled_____: "Other",
-  mobile______: "Mobile",
-};
-
-// Resolves the full "/"-separated folder path for #meta-folder
-// by walking the parentId chain up to (and including) the aliased root.
-export async function resolveFolderPath(folderId: string): Promise<string> {
-  const segments: string[] = [];
-  let currentId: string | undefined = folderId;
-
-  while (currentId) {
-    const [node] = await browser.bookmarks.get(currentId);
-    if (!node) break;
-
-    const alias = ROOT_ALIASES[node.id];
-    segments.unshift(alias ?? node.title);
-    if (alias) break;
-
-    currentId = node.parentId;
-  }
-
-  return segments.join("/");
-}

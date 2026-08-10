@@ -1,8 +1,11 @@
 // FuzzyBookmarks popup entry point.
-// Renders the current-page/bookmark info; folder matching (C5) and
-// commit wiring (C6) arrive in later commits.
+// Renders the current-page/bookmark info and wires the folder picker;
+// commit wiring (C6) arrives in a later commit.
 
-import { loadPopupModel, resolveFolderPath } from "./model";
+import { listFolders, type FolderEntry } from "../lib/folders";
+import { getRecentFolderIds } from "../lib/query-memory";
+import { setupFolderPicker, type PickerItem } from "./folder-picker";
+import { loadPopupModel } from "./model";
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -12,8 +15,18 @@ function getElement<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-async function renderPopup(): Promise<void> {
-  const model = await loadPopupModel();
+function describeSelection(item: PickerItem | null): string {
+  if (!item) return "";
+  if (item.kind === "create") return item.title;
+  return item.entry.path;
+}
+
+async function initPopup(): Promise<void> {
+  const [model, folders, recentFolderIds] = await Promise.all([
+    loadPopupModel(),
+    listFolders(),
+    getRecentFolderIds(),
+  ]);
 
   getElement<HTMLImageElement>("favicon").src = model.favIconUrl ?? "";
   getElement<HTMLHeadingElement>("page-title").textContent = model.pageTitle;
@@ -25,13 +38,28 @@ async function renderPopup(): Promise<void> {
     ? new Date(model.dateAdded).toLocaleString()
     : "";
 
-  getElement("meta-folder").textContent = model.folderId
-    ? await resolveFolderPath(model.folderId)
+  const folderById = new Map<string, FolderEntry>(
+    folders.map((folder) => [folder.id, folder]),
+  );
+  const metaFolder = getElement("meta-folder");
+  metaFolder.textContent = model.folderId
+    ? (folderById.get(model.folderId)?.path ?? "")
     : "";
+
+  setupFolderPicker({
+    input: getElement<HTMLInputElement>("folder-input"),
+    list: getElement<HTMLUListElement>("folder-list"),
+    folders,
+    currentFolderId: model.folderId,
+    recentFolderIds,
+    onSelectionChange: (item) => {
+      metaFolder.textContent = describeSelection(item);
+    },
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   // Explicit focus: autofocus alone is unreliable in extension popups.
   getElement<HTMLInputElement>("folder-input").focus();
-  void renderPopup();
+  void initPopup();
 });

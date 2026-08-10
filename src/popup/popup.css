@@ -98,6 +98,19 @@ body {
 #folder-list li {
   padding: 4px 6px;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#folder-list li.create-entry {
+  font-style: italic;
+  color: var(--muted-fg);
+  border-top: 1px solid var(--border);
+}
+
+#folder-list li.create-entry[aria-selected="true"] {
+  color: var(--fg);
 }
 
 #folder-list li[aria-selected="true"] {
