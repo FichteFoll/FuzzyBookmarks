@@ -26,5 +26,8 @@
     "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10",
     "web-ext": "^10.6.0"
+  },
+  "dependencies": {
+    "fuzzysort": "^3.1.0"
   }
 }
