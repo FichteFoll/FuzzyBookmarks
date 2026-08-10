@@ -60,7 +60,22 @@ pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
 
 ## Keyboard shortcut
 
-_To be documented once the Ctrl+D binding lands._
+The addon binds Ctrl+D in two complementary ways:
+
+- The extension command (`_execute_action`) suggests Ctrl+D,
+  but Firefox does not reliably let extensions
+  override its built-in shortcuts,
+  and the behavior differs between platforms.
+  You can (re)assign the shortcut yourself under
+  about:addons -> gear menu -> Manage Extension Shortcuts.
+- A content script intercepts Ctrl+D on normal web pages
+  and opens the popup,
+  covering the cases where the built-in binding wins.
+  It cannot run on privileged pages
+  (`about:*` pages, `addons.mozilla.org`, the built-in PDF viewer);
+  there only the extension command applies.
+  Pages that handle Ctrl+D themselves
+  (e.g. a spreadsheet's fill-down) keep their behavior.
 
 ## Settings
 
