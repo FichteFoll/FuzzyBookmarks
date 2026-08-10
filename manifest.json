@@ -20,6 +20,9 @@
     "default_popup": "popup/popup.html",
     "default_icon": "icons/fuzzybookmarks.svg"
   },
+  "options_ui": {
+    "page": "options/options.html"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

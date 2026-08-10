@@ -79,7 +79,18 @@ The addon binds Ctrl+D in two complementary ways:
 
 ## Settings
 
-_To be documented once the options page lands._
+The addon's options page (about:addons -> FuzzyBookmarks -> Preferences)
+offers a single setting: the default folder.
+It lists every bookmark folder by its full path,
+plus a "Firefox default (Other)" entry for the unfiled bookmarks root.
+The choice is saved immediately when changed.
+
+The default folder is where a bookmark ends up
+when Enter is pressed without narrowing the folder list
+(empty query, no arrow-key selection)
+on a page that is not bookmarked yet.
+For a page that is already bookmarked,
+Enter without narrowing instead keeps the bookmark in its current folder.
 
 ## Development
 

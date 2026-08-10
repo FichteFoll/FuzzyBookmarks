@@ -1,0 +1,27 @@
+body {
+  margin: 12px;
+  font-family: system-ui, sans-serif;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+select {
+  width: 320px;
+  padding: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+  select {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #444;
+  }
+}
