@@ -204,7 +204,8 @@ export function setupFolderPicker(
 
   const recompute = async (query: string): Promise<void> => {
     const thisGeneration = ++generation;
-    const remembered = await recallSelection(query);
+    // Trim to stay symmetric with the trimmed query rememberSelection stores.
+    const remembered = await recallSelection(query.trim());
     // A newer input event superseded this recomputation.
     if (thisGeneration !== generation) return;
     state = computeList(
