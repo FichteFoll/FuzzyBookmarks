@@ -17,7 +17,46 @@ This addon was written with AI assistance.
 
 ## Usage
 
-_To be documented once the popup behavior lands._
+Open the popup on the page you want to bookmark;
+focus starts in the folder input
+and the folder list below it is always visible.
+With an empty input it shows recently used folders first
+(and, when editing an existing bookmark, its current folder on top).
+
+Type a few characters of the target folder's path
+to fuzzy-filter the list;
+matched characters are highlighted,
+and ArrowUp/ArrowDown move the selection.
+Press Enter anywhere in the form to file the bookmark
+into the selected folder.
+If the page is already bookmarked,
+Enter moves the existing bookmark there instead of duplicating it,
+and Shift+Enter files a copy while leaving the original untouched.
+
+Pressing Enter without typing or navigating
+files a new bookmark into the configured default folder,
+or saves an existing bookmark in place
+(title edits included).
+
+Tab and Shift+Tab cycle through
+the folder input, the title input,
+and the Remove and Create/Save buttons.
+Remove deletes the bookmark being edited and closes the popup;
+it is disabled while the page is not bookmarked.
+
+When the query matches no folder exactly,
+the list ends with a `Create folder "<query>"` entry.
+The query may be a `/`-separated path such as `dev/js/new`:
+the longest existing prefix is reused
+and the missing folders are created as a nested chain.
+A leading `Menu`, `Toolbar`, `Other`, or `Mobile` segment
+anchors the path at that bookmark root;
+otherwise it is created under the default folder.
+
+If several bookmarks exist for the current URL,
+a selector listing title, folder, and date added
+appears before the form;
+pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
 
 ## Keyboard shortcut
 

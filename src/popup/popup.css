@@ -123,6 +123,41 @@ body {
   border-radius: 2px;
 }
 
+#bookmark-selector ul {
+  list-style: none;
+  margin: 4px 0 8px;
+  padding: 0;
+  background: var(--list-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+#bookmark-selector li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+#bookmark-selector li[aria-selected="true"] {
+  background: var(--selected-bg);
+}
+
+#bookmark-selector .selector-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#bookmark-selector .selector-folder,
+#bookmark-selector .selector-date {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--muted-fg);
+}
+
 .button-bar {
   display: flex;
   justify-content: flex-end;
