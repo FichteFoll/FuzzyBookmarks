@@ -1,0 +1,4 @@
+# pnpm 11 reads settings from here, not from a "pnpm" field in package.json.
+# esbuild's postinstall compiles/validates its platform binary.
+allowBuilds:
+  esbuild: true

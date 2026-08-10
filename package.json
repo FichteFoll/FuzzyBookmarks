@@ -1,0 +1,30 @@
+{
+  "name": "fuzzybookmarks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Firefox extension for filing bookmarks into folders chosen via fuzzy matching",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "start": "web-ext run --source-dir dist",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/firefox-webext-browser": "^143.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.8.1",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.66.0",
+    "vitest": "^4.1.10",
+    "web-ext": "^10.6.0"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "FuzzyBookmarks",
+  "version": "0.1.0",
+  "description": "File the current page as a bookmark into a folder chosen via fuzzy matching, keyboard-driven.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "fuzzybookmarks@fichtefoll",
+      "strict_min_version": "127.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "permissions": ["bookmarks", "storage", "tabs"],
+  "background": {
+    "scripts": ["background/main.js"]
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/fuzzybookmarks.svg"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+D"
+      }
+    }
+  },
+  "icons": {
+    "48": "icons/fuzzybookmarks.svg",
+    "96": "icons/fuzzybookmarks.svg"
+  }
+}
