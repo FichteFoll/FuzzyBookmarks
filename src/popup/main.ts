@@ -18,6 +18,7 @@ import {
   recordFolderUse,
   rememberSelection,
 } from "../lib/query-memory";
+import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
 import { derivePopupModel, type PopupModel } from "./model";
@@ -179,9 +180,11 @@ async function initPopup(): Promise<void> {
   getElement<HTMLButtonElement>("btn-remove").disabled = !model.removeEnabled;
   getElement<HTMLButtonElement>("btn-commit").textContent = model.commitLabel;
 
-  getElement("meta-date").textContent = model.dateAdded
-    ? new Date(model.dateAdded).toLocaleString()
+  const metaDate = getElement("meta-date");
+  metaDate.textContent = model.dateAdded
+    ? `created ${formatRelativeTime(model.dateAdded, Date.now())}`
     : "";
+  metaDate.title = model.dateAdded ? formatAbsoluteTime(model.dateAdded) : "";
 
   const folderById = new Map<string, FolderEntry>(
     folders.map((folder) => [folder.id, folder]),

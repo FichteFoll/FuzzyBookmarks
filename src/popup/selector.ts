@@ -4,6 +4,7 @@
 
 import type { CommitInput } from "../lib/bookmark-actions";
 import { resolveCreatePath, type FolderEntry } from "../lib/folders";
+import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { isNarrowed, type PickerState } from "./folder-picker";
 
 // Firefox's "Other Bookmarks" root: the create-path anchor
@@ -141,18 +142,23 @@ export function pickBookmark(
 function renderRow(row: SelectorRow): HTMLLIElement {
   const li = document.createElement("li");
   li.setAttribute("role", "option");
-  const cells: Array<[string, string]> = [
-    ["selector-title", row.title],
-    ["selector-folder", row.folderPath],
-    [
-      "selector-date",
-      row.dateAdded === null ? "" : new Date(row.dateAdded).toLocaleString(),
-    ],
+  const cells: Array<{ className: string; text: string; title?: string }> = [
+    { className: "selector-title", text: row.title },
+    { className: "selector-folder", text: row.folderPath },
+    {
+      className: "selector-date",
+      text:
+        row.dateAdded === null
+          ? ""
+          : formatRelativeTime(row.dateAdded, Date.now()),
+      title: row.dateAdded === null ? "" : formatAbsoluteTime(row.dateAdded),
+    },
   ];
-  for (const [className, text] of cells) {
+  for (const { className, text, title } of cells) {
     const span = document.createElement("span");
     span.className = className;
     span.textContent = text;
+    if (title !== undefined) span.title = title;
     li.append(span);
   }
   return li;
