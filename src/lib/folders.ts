@@ -20,6 +20,10 @@ const ALIAS_TO_ROOT_ID = new Map(
   Object.entries(ROOT_ALIASES).map(([id, alias]) => [alias.toLowerCase(), id]),
 );
 
+const ROOT_ALIASES_BY_LOWER = new Map(
+  Object.values(ROOT_ALIASES).map((alias) => [alias.toLowerCase(), alias]),
+);
+
 export async function listFolders(): Promise<FolderEntry[]> {
   const [root] = await browser.bookmarks.getTree();
   if (!root) return [];
@@ -67,6 +71,20 @@ export function resolveCreatePath(
     resolved++;
   }
   return { parentId, missingSegments: segments.slice(resolved) };
+}
+
+export function describeCreatePath(path: string, anchorPath: string): string {
+  const segments = path
+    .split(PATH_SEPARATOR)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment !== "");
+  if (segments.length === 0) return anchorPath;
+
+  const alias = ROOT_ALIASES_BY_LOWER.get(segments[0]!.toLowerCase());
+  if (alias) {
+    return [alias, ...segments.slice(1)].join(PATH_SEPARATOR);
+  }
+  return anchorPath + PATH_SEPARATOR + segments.join(PATH_SEPARATOR);
 }
 
 function findChildFolder(

@@ -200,6 +200,9 @@ async function initPopup(): Promise<void> {
     folders,
     currentFolderId: model.folderId,
     recentFolderIds,
+    createAnchorPath:
+      folderById.get(settings.defaultFolderId ?? FALLBACK_PARENT_ID)?.path ??
+      "Other",
   });
 
   if (url === null) return;

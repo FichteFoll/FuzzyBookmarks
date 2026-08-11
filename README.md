@@ -46,7 +46,9 @@ Remove deletes the bookmark being edited and closes the popup;
 it is disabled while the page is not bookmarked.
 
 When the query matches no folder exactly,
-the list ends with a `Create folder "<query>"` entry.
+the list ends with a `Create folder "<resolved path>"` entry,
+showing the full target path the query resolves to,
+including the default folder for queries that are not anchored elsewhere.
 The query may be a `/`-separated path such as `dev/js/new`:
 the longest existing prefix is reused
 and the missing folders are created as a nested chain.

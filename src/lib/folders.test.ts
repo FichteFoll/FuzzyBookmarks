@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { FolderEntry } from "./folders";
-import { listFolders, PATH_SEPARATOR, resolveCreatePath } from "./folders";
+import {
+  describeCreatePath,
+  listFolders,
+  PATH_SEPARATOR,
+  resolveCreatePath,
+} from "./folders";
 
 type Node = browser.bookmarks.BookmarkTreeNode;
 
@@ -171,5 +176,29 @@ describe("resolveCreatePath", () => {
       parentId: "fb",
       missingSegments: [],
     });
+  });
+});
+
+describe("describeCreatePath", () => {
+  it("anchors a non-alias path at the anchor path", () => {
+    expect(describeCreatePath("ttsx", "Other")).toBe("Other/ttsx");
+  });
+
+  it("anchors a nested non-alias path at the anchor path", () => {
+    expect(describeCreatePath("dev/js", "Other/Inbox")).toBe(
+      "Other/Inbox/dev/js",
+    );
+  });
+
+  it("canonicalizes a root alias's casing", () => {
+    expect(describeCreatePath("other/x", "Toolbar")).toBe("Other/x");
+  });
+
+  it("keeps a correctly-cased root alias", () => {
+    expect(describeCreatePath("Menu/dev", "Other")).toBe("Menu/dev");
+  });
+
+  it("trims segments", () => {
+    expect(describeCreatePath(" dev / js ", "Other")).toBe("Other/dev/js");
   });
 });

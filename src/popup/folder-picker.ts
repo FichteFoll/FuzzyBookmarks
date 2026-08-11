@@ -2,7 +2,7 @@
 // Pure reducers (computeList, moveSelection, isNarrowed) hold the behavior;
 // setupFolderPicker is a thin DOM layer over them.
 
-import type { FolderEntry } from "../lib/folders";
+import { describeCreatePath, type FolderEntry } from "../lib/folders";
 import { matchFolders, type FolderMatch } from "../lib/fuzzy";
 import { pickSelectedIndex, recallSelection } from "../lib/query-memory";
 
@@ -133,6 +133,7 @@ export interface FolderPickerOptions {
   folders: FolderEntry[];
   currentFolderId: string | null;
   recentFolderIds: string[];
+  createAnchorPath: string;
 }
 
 export interface FolderPickerHandle {
@@ -182,7 +183,7 @@ export function setupFolderPicker(
     li.setAttribute("role", "option");
     if (item.kind === "create") {
       li.classList.add("create-entry");
-      li.textContent = `Create folder "${item.title}"`;
+      li.textContent = `Create folder "${describeCreatePath(item.title, options.createAnchorPath)}"`;
     } else {
       renderHighlighted(li, item.entry.path, item.highlightRanges);
     }
