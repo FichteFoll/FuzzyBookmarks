@@ -75,15 +75,27 @@ In the repository under Settings -> Environments:
 
 ## Cutting a release
 
-1. Bump `version` in `manifest.json` and `package.json`.
-   AMO rejects a version number it has already seen,
-   so this must happen before every signing run.
-2. Commit and tag:
+`package.json` is the only place the version is written.
+`scripts/build.mjs` injects it into `dist/manifest.json` at build time,
+and `pnpm version` writes it, commits and tags in one step,
+so a release needs no manual version editing anywhere.
+
+1. From a clean working tree on `main`, bump the version:
 
    ```zsh
-   git commit -am "Release 0.2.0"
-   git tag v0.2.0
-   git push origin main v0.2.0
+   pnpm version minor   # or major / patch / an explicit 0.2.0
+   ```
+
+   This rewrites `package.json`,
+   commits the change
+   and creates the matching `v0.2.0` tag.
+   AMO rejects a version number it has already seen,
+   so every signing run needs a fresh bump.
+
+2. Push the commit and the tag:
+
+   ```zsh
+   git push --follow-tags origin main
    ```
 
 3. The workflow starts and runs `verify`.

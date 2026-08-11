@@ -1,7 +1,6 @@
 {
   "manifest_version": 3,
   "name": "FuzzyBookmarks",
-  "version": "0.1.0",
   "description": "File the current page as a bookmark into a folder chosen via fuzzy matching, keyboard-driven.",
   "browser_specific_settings": {
     "gecko": {

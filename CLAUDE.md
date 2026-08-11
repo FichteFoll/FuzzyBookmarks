@@ -20,10 +20,12 @@ All commands run from the repository root via pnpm.
 ## Layout
 
 ```
-manifest.json            MV3, Firefox-only
+manifest.json            MV3, Firefox-only; carries no "version" key
 mise.toml                pins node and pnpm
 scripts/build.mjs        esbuild: every src/*/main.ts is an entry point;
-                         copies *.html, *.css, manifest.json, icons/ to dist/
+                         copies *.html, *.css, icons/ to dist/ and writes
+                         dist/manifest.json with the package.json version
+docs/deploy.md           release pipeline and AMO signing setup
 src/background/main.ts   event page (MV3 "background.scripts" in Firefox)
 src/popup/               popup.html, popup.css, main.ts, ...
 src/lib/                 pure logic modules, unit-tested
@@ -62,6 +64,8 @@ do not edit `scripts/build.mjs` to register entry points.
   UI captions derive from that kind
   instead of re-deriving the create/update/move/copy conditions.
 - `storage.local` keys: `settings`, `queryMemory`, `folderRecency`.
+- `package.json` is the single source of truth for the version;
+  release it with `pnpm version`, never by editing a version by hand.
 
 ## Commits
 
