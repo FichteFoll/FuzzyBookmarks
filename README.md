@@ -124,6 +124,12 @@ pnpm install
 | `pnpm typecheck`    | `tsc --noEmit`                                 |
 | `pnpm test`         | Vitest unit tests                              |
 
+Tests run in Vitest's default `node` environment.
+DOM-dependent popup tests run against
+[happy-dom](https://github.com/capricorn86/happy-dom) instead,
+opted into per file with a `// @vitest-environment happy-dom` docblock
+on the file's first line.
+
 ### web-ext workflow
 
 `pnpm build` writes a loadable extension to `dist/`;

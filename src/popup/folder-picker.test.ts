@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment happy-dom
+
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type { FolderEntry } from "../lib/folders";
 import {
@@ -6,6 +8,7 @@ import {
   isNarrowed,
   moveSelection,
   RENDER_CAP,
+  setupFolderPicker,
   type PickerItem,
   type PickerState,
 } from "./folder-picker";
@@ -283,5 +286,118 @@ describe("isNarrowed", () => {
     ["js", true, true],
   ])("query %j, navigated %s -> %s", (query, userNavigated, expected) => {
     expect(isNarrowed(state(query, userNavigated))).toBe(expected);
+  });
+});
+
+describe("setupFolderPicker", () => {
+  const folders = [folder("a", "dev/js"), folder("b", "recipes")];
+
+  // recompute awaits recallSelection, which reads storage.local.
+  function installFakeStorage(): void {
+    const local = {
+      get: () => Promise.resolve({}),
+      set: () => Promise.resolve(),
+    };
+    (globalThis as { browser?: unknown }).browser = { storage: { local } };
+  }
+
+  // A macrotask turn drains every microtask recompute awaits.
+  function flush(): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  function mount(withCallback = true): {
+    input: HTMLInputElement;
+    list: HTMLUListElement;
+    states: PickerState[];
+  } {
+    const input = document.createElement("input");
+    const list = document.createElement("ul");
+    document.body.replaceChildren(input, list);
+    const states: PickerState[] = [];
+    setupFolderPicker({
+      input,
+      list,
+      folders,
+      currentFolderId: null,
+      recentFolderIds: [],
+      createAnchorPath: "Other",
+      onStateChange: withCallback ? (state) => states.push(state) : undefined,
+    });
+    return { input, list, states };
+  }
+
+  function lastNarrowed(states: PickerState[]): boolean {
+    const last = states[states.length - 1];
+    if (last === undefined) throw new Error("no state change was notified");
+    return isNarrowed(last);
+  }
+
+  async function type(input: HTMLInputElement, query: string): Promise<void> {
+    input.value = query;
+    input.dispatchEvent(new Event("input"));
+    await flush();
+  }
+
+  beforeEach(() => {
+    installFakeStorage();
+  });
+
+  it("notifies with a non-narrowed state after the initial recomputation", async () => {
+    const { states } = mount();
+
+    await flush();
+
+    expect(states).not.toHaveLength(0);
+    expect(lastNarrowed(states)).toBe(false);
+  });
+
+  it("notifies with a narrowed state after a query is typed", async () => {
+    const { input, states } = mount();
+    await flush();
+
+    await type(input, "js");
+
+    expect(lastNarrowed(states)).toBe(true);
+  });
+
+  it("notifies with a non-narrowed state after the query is cleared", async () => {
+    const { input, states } = mount();
+    await flush();
+    await type(input, "js");
+
+    await type(input, "");
+
+    expect(lastNarrowed(states)).toBe(false);
+  });
+
+  it("notifies with a narrowed state after ArrowDown on an empty query", async () => {
+    const { input, states } = mount();
+    await flush();
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+
+    expect(lastNarrowed(states)).toBe(true);
+  });
+
+  it("notifies with a narrowed state after a list item is clicked", async () => {
+    const { list, states } = mount();
+    await flush();
+
+    const li = list.children[1];
+    expect(li).toBeDefined();
+    li?.dispatchEvent(new MouseEvent("click"));
+
+    expect(lastNarrowed(states)).toBe(true);
+  });
+
+  it("works without an onStateChange callback", async () => {
+    const { input, list } = mount(false);
+    await flush();
+
+    await type(input, "js");
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+
+    expect(list.children.length).toBeGreaterThan(0);
   });
 });
