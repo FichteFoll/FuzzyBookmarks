@@ -6,7 +6,6 @@ import {
   applyCommit,
   removeBookmark,
   resolveCommit,
-  resolveCommitKind,
   type CommitPlan,
 } from "../lib/bookmark-actions";
 import {
@@ -21,12 +20,9 @@ import {
 } from "../lib/query-memory";
 import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
+import { setupCommitCaption } from "./commit-caption";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
-import {
-  commitButtonCaption,
-  derivePopupModel,
-  type PopupModel,
-} from "./model";
+import { derivePopupModel, type PopupModel } from "./model";
 import {
   buildCommitInput,
   buildSelectorRows,
@@ -134,8 +130,9 @@ function wireActions(context: CommitContext): void {
     });
   };
 
-  commitButton.addEventListener("click", () =>
-    runExclusive(() => commit(context, false)),
+  // Enter and a click agree on the modifier: Shift copies in both cases.
+  commitButton.addEventListener("click", (event) =>
+    runExclusive(() => commit(context, event.shiftKey)),
   );
   removeButton.addEventListener("click", () => {
     const bookmarkId = context.model.bookmarkId;
@@ -186,15 +183,6 @@ async function initPopup(): Promise<void> {
   const nameInput = getElement<HTMLInputElement>("name-input");
   nameInput.value = model.pageTitle;
   getElement<HTMLButtonElement>("btn-remove").disabled = !model.removeEnabled;
-  // The picker starts un-narrowed and its first recompute is asynchronous,
-  // so the initial caption is assigned synchronously here.
-  getElement<HTMLButtonElement>("btn-commit").textContent = commitButtonCaption(
-    resolveCommitKind({
-      existingBookmark: existingBookmarkOf(model),
-      queryNarrowed: false,
-      copyRequested: false,
-    }),
-  );
 
   const metaDate = getElement("meta-date");
   metaDate.textContent = model.dateAdded
@@ -211,6 +199,9 @@ async function initPopup(): Promise<void> {
     currentLocation.removeAttribute("hidden");
   }
 
+  // The picker and the caption observe each other, so the notification is
+  // routed through an indirection the caption handle replaces below.
+  let notifyCaption = (): void => {};
   const picker = setupFolderPicker({
     input: getElement<HTMLInputElement>("folder-input"),
     list: getElement<HTMLUListElement>("folder-list"),
@@ -220,7 +211,16 @@ async function initPopup(): Promise<void> {
     createAnchorPath:
       folderById.get(settings.defaultFolderId ?? FALLBACK_PARENT_ID)?.path ??
       "Other",
+    onStateChange: () => notifyCaption(),
   });
+  // setupCommitCaption assigns the caption right away, so the popup shows the
+  // correct action even before the first recomputation and for a URL-less tab.
+  const caption = setupCommitCaption({
+    button: getElement<HTMLButtonElement>("btn-commit"),
+    getPickerState: () => picker.getState(),
+    existingBookmark: existingBookmarkOf(model),
+  });
+  notifyCaption = () => caption.update();
 
   if (url === null) return;
   wireActions({
