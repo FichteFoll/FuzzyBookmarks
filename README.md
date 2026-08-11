@@ -18,7 +18,8 @@ This addon was written with AI assistance.
 ## Usage
 
 Open the popup on the page you want to bookmark;
-focus starts in the folder input
+focus starts in the folder input,
+below the editable bookmark name,
 and the folder list below it is always visible.
 With an empty input it shows recently used folders first
 (and, when editing an existing bookmark, its current folder on top).
@@ -36,10 +37,10 @@ and Shift+Enter files a copy while leaving the original untouched.
 Pressing Enter without typing or navigating
 files a new bookmark into the configured default folder,
 or saves an existing bookmark in place
-(title edits included).
+(name edits included).
 
 Tab and Shift+Tab cycle through
-the folder input, the title input,
+the name input, the folder input,
 and the Remove and Create/Save buttons.
 Remove deletes the bookmark being edited and closes the popup;
 it is disabled while the page is not bookmarked.
@@ -54,7 +55,7 @@ anchors the path at that bookmark root;
 otherwise it is created under the default folder.
 
 If several bookmarks exist for the current URL,
-a selector listing title, folder, and date added
+a selector listing name, folder, and date added
 appears before the form;
 pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
 

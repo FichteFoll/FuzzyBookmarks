@@ -43,7 +43,7 @@ interface CommitContext {
   folders: FolderEntry[];
   defaultFolderId: string | null;
   picker: FolderPickerHandle;
-  titleInput: HTMLInputElement;
+  nameInput: HTMLInputElement;
 }
 
 async function commit(
@@ -53,7 +53,7 @@ async function commit(
   const { model } = context;
   const input = buildCommitInput({
     url: context.url,
-    title: context.titleInput.value,
+    title: context.nameInput.value,
     picker: context.picker.getState(),
     folders: context.folders,
     existingBookmark:
@@ -174,9 +174,8 @@ async function initPopup(): Promise<void> {
   );
 
   getElement<HTMLImageElement>("favicon").src = model.favIconUrl ?? "";
-  getElement<HTMLHeadingElement>("page-title").textContent = model.pageTitle;
-  const titleInput = getElement<HTMLInputElement>("title-input");
-  titleInput.value = model.pageTitle;
+  const nameInput = getElement<HTMLInputElement>("name-input");
+  nameInput.value = model.pageTitle;
   getElement<HTMLButtonElement>("btn-remove").disabled = !model.removeEnabled;
   getElement<HTMLButtonElement>("btn-commit").textContent = model.commitLabel;
 
@@ -210,7 +209,7 @@ async function initPopup(): Promise<void> {
     folders,
     defaultFolderId: settings.defaultFolderId,
     picker,
-    titleInput,
+    nameInput,
   });
 }
 

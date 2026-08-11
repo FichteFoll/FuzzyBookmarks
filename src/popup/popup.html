@@ -7,27 +7,28 @@
   </head>
   <body>
     <div id="bookmark-selector" hidden></div>
-    <header class="page-info">
-      <img id="favicon" alt="" />
-      <h1 id="page-title"></h1>
-    </header>
-    <p class="meta">
+    <div class="field-caption">
+      <label for="name-input">Name</label>
       <span id="meta-date"></span>
-    </p>
+    </div>
+    <div class="name-row">
+      <img id="favicon" alt="" />
+      <input
+        id="name-input"
+        type="text"
+        placeholder="Name..."
+        autocomplete="off"
+      />
+    </div>
+    <label class="field-caption" for="folder-input">Location</label>
     <input
       id="folder-input"
       type="text"
       placeholder="Folder..."
       autocomplete="off"
     />
-    <ul id="folder-list" role="listbox"></ul>
+    <ul id="folder-list" role="listbox" tabindex="-1"></ul>
     <p id="current-location" hidden></p>
-    <input
-      id="title-input"
-      type="text"
-      placeholder="Title..."
-      autocomplete="off"
-    />
     <div class="button-bar">
       <button id="btn-remove" type="button">Remove</button>
       <button id="btn-commit" type="button">Create</button>
