@@ -7,6 +7,11 @@
   --list-bg: #ffffff;
   --selected-bg: #dbe7ff;
   --mark-bg: #fff3a0;
+  /* Firefox Photon accent colors for default/primary buttons */
+  --primary-bg: #0060df;
+  --primary-hover-bg: #0250bb;
+  --primary-active-bg: #054096;
+  --primary-fg: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,6 +24,9 @@
     --list-bg: #2a2a2a;
     --selected-bg: #37456b;
     --mark-bg: #6b5b00;
+    --primary-bg: #2b73e0;
+    --primary-hover-bg: #4a8bec;
+    --primary-active-bg: #6ba2f0;
   }
 }
 
@@ -175,6 +183,21 @@ button {
   background: var(--input-bg);
   color: var(--fg);
   cursor: pointer;
+}
+
+button.primary {
+  border-color: transparent;
+  background: var(--primary-bg);
+  color: var(--primary-fg);
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--primary-hover-bg);
+}
+
+button.primary:active:not(:disabled) {
+  background: var(--primary-active-bg);
 }
 
 button:disabled {
