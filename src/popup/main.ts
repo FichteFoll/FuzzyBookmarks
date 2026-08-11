@@ -6,6 +6,7 @@ import {
   applyCommit,
   removeBookmark,
   resolveCommit,
+  resolveCommitKind,
   type CommitPlan,
 } from "../lib/bookmark-actions";
 import {
@@ -21,7 +22,11 @@ import {
 import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
-import { derivePopupModel, type PopupModel } from "./model";
+import {
+  commitButtonCaption,
+  derivePopupModel,
+  type PopupModel,
+} from "./model";
 import {
   buildCommitInput,
   buildSelectorRows,
@@ -35,6 +40,13 @@ function getElement<T extends HTMLElement>(id: string): T {
     throw new Error(`Missing #${id} element in popup.html`);
   }
   return element as T;
+}
+
+function existingBookmarkOf(
+  model: PopupModel,
+): { id: string; parentId: string } | null {
+  if (model.bookmarkId === null || model.folderId === null) return null;
+  return { id: model.bookmarkId, parentId: model.folderId };
 }
 
 interface CommitContext {
@@ -56,10 +68,7 @@ async function commit(
     title: context.nameInput.value,
     picker: context.picker.getState(),
     folders: context.folders,
-    existingBookmark:
-      model.bookmarkId !== null && model.folderId !== null
-        ? { id: model.bookmarkId, parentId: model.folderId }
-        : null,
+    existingBookmark: existingBookmarkOf(model),
     copyRequested,
     defaultFolderId: context.defaultFolderId,
   });
@@ -177,7 +186,15 @@ async function initPopup(): Promise<void> {
   const nameInput = getElement<HTMLInputElement>("name-input");
   nameInput.value = model.pageTitle;
   getElement<HTMLButtonElement>("btn-remove").disabled = !model.removeEnabled;
-  getElement<HTMLButtonElement>("btn-commit").textContent = model.commitLabel;
+  // The picker starts un-narrowed and its first recompute is asynchronous,
+  // so the initial caption is assigned synchronously here.
+  getElement<HTMLButtonElement>("btn-commit").textContent = commitButtonCaption(
+    resolveCommitKind({
+      existingBookmark: existingBookmarkOf(model),
+      queryNarrowed: false,
+      copyRequested: false,
+    }),
+  );
 
   const metaDate = getElement("meta-date");
   metaDate.textContent = model.dateAdded

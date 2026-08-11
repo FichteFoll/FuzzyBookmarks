@@ -40,18 +40,34 @@ export type CommitPlan =
     }
   | { kind: "update"; bookmarkId: string; title: string };
 
+export type CommitKind = CommitPlan["kind"];
+
+// The single place deciding which action a commit performs,
+// so UI captions can name the action without re-deriving the conditions.
+export function resolveCommitKind(
+  input: Pick<
+    CommitInput,
+    "existingBookmark" | "queryNarrowed" | "copyRequested"
+  >,
+): CommitKind {
+  if (!input.existingBookmark) return "create";
+  if (!input.queryNarrowed) return "update";
+  return input.copyRequested ? "copy" : "move";
+}
+
 export function resolveCommit(input: CommitInput): CommitPlan {
   const { url, title, existingBookmark } = input;
+  const kind = resolveCommitKind(input);
 
-  if (existingBookmark && !input.queryNarrowed) {
+  if (!existingBookmark) {
+    return { kind: "create", url, title, ...resolveTarget(input) };
+  }
+  if (kind === "update") {
     return { kind: "update", bookmarkId: existingBookmark.id, title };
   }
 
   const target = resolveTarget(input);
-  if (!existingBookmark) {
-    return { kind: "create", url, title, ...target };
-  }
-  if (input.copyRequested) {
+  if (kind === "copy") {
     return { kind: "copy", url, title, ...target };
   }
   return { kind: "move", bookmarkId: existingBookmark.id, title, ...target };
