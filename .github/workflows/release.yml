@@ -54,6 +54,13 @@ jobs:
             --api-secret "$AMO_JWT_SECRET" \
             --channel unlisted \
             --artifacts-dir web-ext-artifacts
+      # AMO names the download after the slug it generated for the add-on
+      # (e.g. `fc9c7b40cc324d00b457-0.1.0.xpi`) and `web-ext sign` keeps that
+      # name, so rename the file to something recognizable in the release.
+      - name: Rename the signed package
+        run: |
+          mv web-ext-artifacts/*.xpi \
+            "web-ext-artifacts/fuzzybookmarks-${GITHUB_REF_NAME#v}.xpi"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: xpi

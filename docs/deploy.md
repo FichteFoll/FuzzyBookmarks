@@ -111,6 +111,8 @@ so a release needs no manual version editing anywhere.
 6. `release` attaches the signed `.xpi`
    to the GitHub release for the tag,
    with auto-generated notes.
+   AMO returns the file under the slug it generated for the add-on,
+   so `sign` renames it to `fuzzybookmarks-<version>.xpi` beforehand.
 
 ## Installing the result
 
