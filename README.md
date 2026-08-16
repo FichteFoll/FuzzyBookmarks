@@ -86,8 +86,11 @@ it is disabled while the page is not bookmarked.
 
 If several bookmarks exist for the current URL,
 a selector listing name, folder path, and date added
-replaces the popup's contents;
-pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
+replaces the popup's contents,
+plus a trailing "New bookmark for this page" row;
+pick the bookmark to edit,
+or that row to file another bookmark for the page,
+with ArrowUp/ArrowDown and Enter.
 Enter only picks here,
 it does not commit anything
 and it does not close the popup.

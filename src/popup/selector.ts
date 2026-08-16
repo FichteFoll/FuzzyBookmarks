@@ -80,22 +80,22 @@ export function buildCommitInput(form: CommitFormState): CommitInput {
   };
 }
 
-// Shows the selector in `container` and resolves with the picked row.
+export type SelectorChoice =
+  { kind: "existing"; bookmarkId: string } | { kind: "new" };
+
+// Shows the selector in `container` and resolves with the picked choice.
 // ArrowUp/ArrowDown move the selection (wrapping), Enter or a click picks.
+// The container's visibility is the caller's concern (see `showView` in
+// `./views`); this function only renders into it and focuses it.
 export function pickBookmark(
   container: HTMLElement,
   rows: SelectorRow[],
-): Promise<SelectorRow> {
+): Promise<SelectorChoice> {
   return new Promise((resolve) => {
+    const optionCount = rows.length + 1;
     let selectedIndex = 0;
     const list = document.createElement("ul");
     list.setAttribute("role", "listbox");
-
-    const pick = (row: SelectorRow): void => {
-      container.hidden = true;
-      container.replaceChildren();
-      resolve(row);
-    };
 
     const applySelection = (): void => {
       for (let i = 0; i < list.children.length; i++) {
@@ -112,9 +112,19 @@ export function pickBookmark(
     rows.forEach((row, index) => {
       const li = renderRow(row);
       li.id = `bookmark-option-${index}`;
-      li.addEventListener("click", () => pick(row));
+      li.addEventListener("click", () =>
+        resolve({ kind: "existing", bookmarkId: row.bookmarkId }),
+      );
       list.append(li);
     });
+
+    const newBookmarkOption = document.createElement("li");
+    newBookmarkOption.setAttribute("role", "option");
+    newBookmarkOption.className = "selector-new";
+    newBookmarkOption.id = `bookmark-option-${rows.length}`;
+    newBookmarkOption.textContent = "New bookmark for this page";
+    newBookmarkOption.addEventListener("click", () => resolve({ kind: "new" }));
+    list.append(newBookmarkOption);
 
     // Every handled key is also stopped from propagating:
     // the pick resolves during this very event's dispatch, so the awaiting
@@ -125,7 +135,7 @@ export function pickBookmark(
         event.preventDefault();
         event.stopPropagation();
         const delta = event.key === "ArrowDown" ? 1 : -1;
-        selectedIndex = (selectedIndex + delta + rows.length) % rows.length;
+        selectedIndex = (selectedIndex + delta + optionCount) % optionCount;
         applySelection();
         return;
       }
@@ -133,14 +143,17 @@ export function pickBookmark(
         event.preventDefault();
         event.stopPropagation();
         const row = rows[selectedIndex];
-        if (row) pick(row);
+        resolve(
+          row
+            ? { kind: "existing", bookmarkId: row.bookmarkId }
+            : { kind: "new" },
+        );
       }
     });
 
     const heading = document.createElement("p");
     heading.textContent = "Multiple bookmarks exist for this page; pick one:";
     container.replaceChildren(heading, list);
-    container.hidden = false;
     container.tabIndex = -1;
     container.focus();
     applySelection();

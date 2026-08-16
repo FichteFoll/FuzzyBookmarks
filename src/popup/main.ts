@@ -158,8 +158,9 @@ async function chooseBookmark(
   if (bookmarks.length <= 1) return bookmarks[0];
   const rows = buildSelectorRows(bookmarks, folders);
   showView(views, "select", views.select);
-  const picked = await pickBookmark(views.select, rows);
-  return bookmarks.find((bookmark) => bookmark.id === picked.bookmarkId);
+  const choice = await pickBookmark(views.select, rows);
+  if (choice.kind === "new") return undefined;
+  return bookmarks.find((bookmark) => bookmark.id === choice.bookmarkId);
 }
 
 async function initPopup(): Promise<void> {

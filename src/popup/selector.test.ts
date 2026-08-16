@@ -10,6 +10,7 @@ import {
   buildSelectorRows,
   pickBookmark,
   type CommitFormState,
+  type SelectorChoice,
   type SelectorRow,
 } from "./selector";
 
@@ -279,7 +280,7 @@ describe("pickBookmark", () => {
 
   function setUp(): {
     container: HTMLElement;
-    choice: Promise<SelectorRow>;
+    choice: Promise<SelectorChoice>;
     documentSpy: ReturnType<typeof vi.fn>;
   } {
     const container = document.createElement("div");
@@ -305,12 +306,37 @@ describe("pickBookmark", () => {
     expect(document.activeElement).toBe(container);
   });
 
-  it("resolves with the selected row on Enter without letting it reach document", async () => {
+  it("does not set the container's hidden attribute when rendering; that is the caller's concern", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    container.hidden = true;
+
+    void pickBookmark(container, rows);
+
+    expect(container.hidden).toBe(true);
+  });
+
+  it("does not clear the container's hidden attribute when a choice resolves; that is the caller's concern", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    container.hidden = false;
+    const choice = pickBookmark(container, rows);
+
+    pressKey(container, "Enter");
+    await choice;
+
+    expect(container.hidden).toBe(false);
+  });
+
+  it("resolves with the selected bookmark on Enter without letting it reach document", async () => {
     const { container, choice, documentSpy } = setUp();
 
     pressKey(container, "Enter");
 
-    await expect(choice).resolves.toEqual(rows[0]);
+    await expect(choice).resolves.toEqual({
+      kind: "existing",
+      bookmarkId: "b1",
+    });
     expect(documentSpy).not.toHaveBeenCalled();
   });
 
@@ -334,5 +360,37 @@ describe("pickBookmark", () => {
 
     expect(path?.textContent).toBe("Other/dev");
     expect(title?.querySelector(".selector-path")).toBeNull();
+  });
+
+  it("appends a new-bookmark row after the duplicate rows", () => {
+    const { container } = setUp();
+
+    const options = container.querySelectorAll("li");
+    const lastOption = options[options.length - 1];
+    expect(options).toHaveLength(rows.length + 1);
+    expect(lastOption?.id).toBe(`bookmark-option-${rows.length}`);
+    expect(lastOption?.className).toBe("selector-new");
+    expect(lastOption?.textContent).toBe("New bookmark for this page");
+  });
+
+  it("resolves { kind: 'new' } on Enter for the new-bookmark row", async () => {
+    const { container, choice } = setUp();
+
+    pressKey(container, "ArrowDown");
+    pressKey(container, "ArrowDown");
+    pressKey(container, "Enter");
+
+    await expect(choice).resolves.toEqual({ kind: "new" });
+  });
+
+  it("wraps ArrowUp from the first row onto the new-bookmark row", () => {
+    const { container } = setUp();
+
+    pressKey(container, "ArrowUp");
+
+    const newBookmarkOption = container.querySelector(".selector-new");
+    expect(newBookmarkOption?.getAttribute("aria-selected")).toBe("true");
+    const options = container.querySelectorAll("li");
+    expect(options[1]?.getAttribute("aria-selected")).toBeNull();
   });
 });

@@ -177,6 +177,16 @@ body {
   flex-shrink: 0;
 }
 
+#select-view .selector-new {
+  font-style: italic;
+  color: var(--muted-fg);
+  border-top: 1px solid var(--border);
+}
+
+#select-view .selector-new[aria-selected="true"] {
+  color: var(--fg);
+}
+
 .button-bar {
   display: flex;
   justify-content: flex-end;
