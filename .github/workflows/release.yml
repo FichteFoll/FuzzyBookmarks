@@ -84,7 +84,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "$GITHUB_REF_NAME" \
+            --title "${GITHUB_REF_NAME#v} ($(date -u +%F))" \
             --generate-notes \
             --draft \
             web-ext-artifacts/*.xpi

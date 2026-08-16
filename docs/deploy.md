@@ -110,7 +110,8 @@ so a release needs no manual version editing anywhere.
    later ones are usually automated and quick.
 6. `release` attaches the signed `.xpi`
    to the GitHub release for the tag,
-   with auto-generated notes.
+   with auto-generated notes
+   and a title of `<version> (<UTC date>)`, e.g. `0.1.0 (2026-08-16)`.
    AMO returns the file under the slug it generated for the add-on,
    so `sign` renames it to `fuzzybookmarks-<version>.xpi` beforehand.
 7. The release is created as a draft,
