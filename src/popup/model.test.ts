@@ -56,7 +56,9 @@ describe("commitButtonCaption", () => {
     existingBookmark: { id: string; parentId: string } | null;
     queryNarrowed: boolean;
     copyRequested: boolean;
-  }): string => commitButtonCaption(resolveCommitKind(input));
+    titleChanged?: boolean;
+  }): string =>
+    commitButtonCaption(resolveCommitKind({ titleChanged: false, ...input }));
 
   it("reads Create when the page is not bookmarked yet", () => {
     expect(
@@ -88,6 +90,17 @@ describe("commitButtonCaption", () => {
     expect(
       caption({ existingBookmark, queryNarrowed: false, copyRequested: true }),
     ).toBe("Save");
+  });
+
+  it("reads Rename when only the name of a bookmarked page was edited", () => {
+    expect(
+      caption({
+        existingBookmark,
+        queryNarrowed: false,
+        copyRequested: false,
+        titleChanged: true,
+      }),
+    ).toBe("Rename");
   });
 
   it("reads Move when the page is bookmarked and the list is narrowed", () => {

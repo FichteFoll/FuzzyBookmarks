@@ -14,6 +14,7 @@ export interface CommitInput {
   existingBookmark: { id: string; parentId: string } | null;
   copyRequested: boolean;
   defaultFolderId: string | null;
+  titleChanged: boolean;
 }
 
 export type CommitPlan =
@@ -38,7 +39,8 @@ export type CommitPlan =
       parentId: string;
       createFolder?: CreateFolderSpec;
     }
-  | { kind: "update"; bookmarkId: string; title: string };
+  | { kind: "update"; bookmarkId: string; title: string }
+  | { kind: "rename"; bookmarkId: string; title: string };
 
 export type CommitKind = CommitPlan["kind"];
 
@@ -47,11 +49,11 @@ export type CommitKind = CommitPlan["kind"];
 export function resolveCommitKind(
   input: Pick<
     CommitInput,
-    "existingBookmark" | "queryNarrowed" | "copyRequested"
+    "existingBookmark" | "queryNarrowed" | "copyRequested" | "titleChanged"
   >,
 ): CommitKind {
   if (!input.existingBookmark) return "create";
-  if (!input.queryNarrowed) return "update";
+  if (!input.queryNarrowed) return input.titleChanged ? "rename" : "update";
   return input.copyRequested ? "copy" : "move";
 }
 
@@ -62,8 +64,8 @@ export function resolveCommit(input: CommitInput): CommitPlan {
   if (!existingBookmark) {
     return { kind: "create", url, title, ...resolveTarget(input) };
   }
-  if (kind === "update") {
-    return { kind: "update", bookmarkId: existingBookmark.id, title };
+  if (kind === "update" || kind === "rename") {
+    return { kind, bookmarkId: existingBookmark.id, title };
   }
 
   const target = resolveTarget(input);
@@ -105,6 +107,8 @@ export async function applyCommit(plan: CommitPlan): Promise<void> {
       await browser.bookmarks.move(plan.bookmarkId, { parentId });
       return;
     }
+    // A rename is an update that the UI names differently.
+    case "rename":
     case "update":
       await browser.bookmarks.update(plan.bookmarkId, { title: plan.title });
       return;

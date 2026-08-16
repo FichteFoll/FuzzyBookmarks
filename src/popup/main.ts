@@ -22,7 +22,7 @@ import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
 import { setupCommitCaption } from "./commit-caption";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
-import { derivePopupModel, type PopupModel } from "./model";
+import { derivePopupModel, isTitleChanged, type PopupModel } from "./model";
 import {
   buildCommitInput,
   buildSelectorRows,
@@ -67,6 +67,7 @@ async function commit(
     existingBookmark: existingBookmarkOf(model),
     copyRequested,
     defaultFolderId: context.defaultFolderId,
+    titleChanged: isTitleChanged(model, context.nameInput.value),
   });
   const plan = resolveCommit(input);
   await applyCommit(plan);
@@ -92,7 +93,8 @@ async function resolveTargetFolderId(
   context: CommitContext,
   plan: CommitPlan,
 ): Promise<string | null> {
-  if (plan.kind === "update") return null;
+  // Neither an update nor a rename targets a folder, so neither records one.
+  if (plan.kind === "update" || plan.kind === "rename") return null;
   if (!plan.createFolder) return plan.parentId;
   // applyCommit does not report the folders it created;
   // re-resolve the create path against a fresh folder list

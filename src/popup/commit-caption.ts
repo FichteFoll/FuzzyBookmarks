@@ -29,6 +29,8 @@ export function setupCommitCaption(
         existingBookmark: options.existingBookmark,
         queryNarrowed: isNarrowed(options.getPickerState()),
         copyRequested: shiftHeld,
+        // The caption does not observe the name input yet.
+        titleChanged: false,
       }),
     );
   };

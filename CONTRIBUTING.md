@@ -101,7 +101,7 @@ do not edit `scripts/build.mjs` to register entry points.
 - The commit plan kind is decided exactly once,
   in `resolveCommitKind` in `src/lib/bookmark-actions.ts`;
   UI captions derive from that kind
-  instead of re-deriving the create/update/move/copy conditions.
+  instead of re-deriving the create/update/rename/move/copy conditions.
 - `storage.local` keys: `settings`, `queryMemory`, `folderRecency`.
 - `package.json` is the single source of truth for the version;
   release it with `pnpm version`, never by editing a version by hand.

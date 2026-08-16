@@ -13,6 +13,7 @@ function makeInput(overrides: Partial<CommitInput> = {}): CommitInput {
     existingBookmark: null,
     copyRequested: false,
     defaultFolderId: null,
+    titleChanged: false,
     ...overrides,
   };
 }
@@ -135,6 +136,40 @@ describe("resolveCommit", () => {
       bookmarkId: "bm",
       title: "Example",
     });
+  });
+
+  it("renames in place when the title changed without narrowing", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "rename",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("updates rather than renames when the title did not change", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      titleChanged: false,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "update",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("prefers the folder change over a rename when narrowed", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "selected",
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({ kind: "move" });
   });
 
   it("updates in place when copy is requested without narrowing", () => {
@@ -298,6 +333,16 @@ describe("applyCommit", () => {
   it("updates only the title", async () => {
     const fake = installFakeBookmarks();
     await applyCommit({ kind: "update", bookmarkId: "bm", title: "New title" });
+    expect(fake.updates).toEqual([
+      { id: "bm", changes: { title: "New title" } },
+    ]);
+    expect(fake.created).toEqual([]);
+    expect(fake.moves).toEqual([]);
+  });
+
+  it("renames by updating only the title", async () => {
+    const fake = installFakeBookmarks();
+    await applyCommit({ kind: "rename", bookmarkId: "bm", title: "New title" });
     expect(fake.updates).toEqual([
       { id: "bm", changes: { title: "New title" } },
     ]);

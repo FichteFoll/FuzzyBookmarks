@@ -98,6 +98,7 @@ describe("buildCommitInput", () => {
       existingBookmark: null,
       copyRequested: false,
       defaultFolderId: null,
+      titleChanged: false,
       ...overrides,
     };
   }
@@ -117,6 +118,7 @@ describe("buildCommitInput", () => {
       existingBookmark: null,
       copyRequested: false,
       defaultFolderId: null,
+      titleChanged: false,
     });
     expect(resolveCommit(input)).toMatchObject({
       kind: "create",
@@ -155,6 +157,24 @@ describe("buildCommitInput", () => {
       kind: "update",
       bookmarkId: "b1",
       title: "Example",
+    });
+  });
+
+  it("carries an edited name through as a rename", () => {
+    const input = buildCommitInput(
+      form({
+        picker: pickerState("", [folderItem(folders[0]!)]),
+        existingBookmark: { id: "b1", parentId: "dev" },
+        title: "Edited",
+        titleChanged: true,
+      }),
+    );
+
+    expect(input.titleChanged).toBe(true);
+    expect(resolveCommit(input)).toEqual({
+      kind: "rename",
+      bookmarkId: "b1",
+      title: "Edited",
     });
   });
 
