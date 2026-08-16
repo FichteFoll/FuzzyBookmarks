@@ -1,13 +1,17 @@
 // Commit button caption: keeps #btn-commit's label naming the action a
-// commit would actually perform, following the picker's narrowed state
-// and the Shift key while the popup is open.
+// commit would actually perform, following the picker's narrowed state,
+// the name input and the Shift key while the popup is open,
+// and disables the button while that action would change nothing.
 
 import { resolveCommitKind } from "../lib/bookmark-actions";
 import { isNarrowed, type PickerState } from "./folder-picker";
-import { commitButtonCaption } from "./model";
+import { commitButtonCaption, isTitleChanged, type PopupModel } from "./model";
 
 export interface CommitCaptionOptions {
   button: HTMLButtonElement;
+  nameInput: HTMLInputElement;
+  model: PopupModel;
+  isBusy: () => boolean;
   getPickerState: () => PickerState;
   existingBookmark: { id: string; parentId: string } | null;
 }
@@ -21,18 +25,21 @@ export function setupCommitCaption(
 ): CommitCaptionHandle {
   let shiftHeld = false;
 
-  // Only the caption is written here; the re-entrancy guard in wireActions
-  // owns the button's disabled state.
+  // The button's disabled state has two independent writers: this caption owns
+  // "this commit would change nothing", the re-entrancy guard in wireActions
+  // owns "an action is in flight" and reports it back through isBusy().
+  // Neither may clear the other's reason, so both are read on every update.
   const update = (): void => {
-    options.button.textContent = commitButtonCaption(
-      resolveCommitKind({
-        existingBookmark: options.existingBookmark,
-        queryNarrowed: isNarrowed(options.getPickerState()),
-        copyRequested: shiftHeld,
-        // The caption does not observe the name input yet.
-        titleChanged: false,
-      }),
-    );
+    const kind = resolveCommitKind({
+      existingBookmark: options.existingBookmark,
+      queryNarrowed: isNarrowed(options.getPickerState()),
+      copyRequested: shiftHeld,
+      titleChanged: isTitleChanged(options.model, options.nameInput.value),
+    });
+    options.button.textContent = commitButtonCaption(kind);
+    // After the rename kind exists, "update" is exactly the no-op commit:
+    // an existing bookmark, no folder narrowing and no name edit.
+    options.button.disabled = options.isBusy() || kind === "update";
   };
 
   // Firefox reports event.shiftKey on the Shift key's own keydown/keyup as the
@@ -47,6 +54,9 @@ export function setupCommitCaption(
   };
   document.addEventListener("keydown", trackShift);
   document.addEventListener("keyup", trackShift);
+
+  // The caption and the disabled state follow the name as the user types.
+  options.nameInput.addEventListener("input", () => update());
 
   // No keyup arrives when Shift is released while the popup is not focused,
   // which would leave the caption stuck on "Copy".

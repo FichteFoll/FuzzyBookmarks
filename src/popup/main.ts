@@ -20,7 +20,7 @@ import {
 } from "../lib/query-memory";
 import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
-import { setupCommitCaption } from "./commit-caption";
+import { setupCommitCaption, type CommitCaptionHandle } from "./commit-caption";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
 import { derivePopupModel, isTitleChanged, type PopupModel } from "./model";
 import {
@@ -52,6 +52,8 @@ interface CommitContext {
   defaultFolderId: string | null;
   picker: FolderPickerHandle;
   nameInput: HTMLInputElement;
+  caption: CommitCaptionHandle;
+  commitGate: { busy: boolean };
 }
 
 async function commit(
@@ -117,16 +119,21 @@ function wireActions(context: CommitContext): void {
   // Re-entrancy guard: the popup stays open until the async mutation
   // resolves, so a held Enter or a double click must not launch a
   // second, concurrent commit/remove.
+  // The commit button's disabled state is written by the caption, which folds
+  // this guard in through commitGate; writing it here would clear the caption's
+  // own reason ("this commit would change nothing").
   let actionInFlight = false;
   const runExclusive = (action: () => Promise<void>): void => {
     if (actionInFlight) return;
     actionInFlight = true;
-    commitButton.disabled = true;
+    context.commitGate.busy = true;
+    context.caption.update();
     removeButton.disabled = true;
     void action().catch((error: unknown) => {
       // Re-enable the form so the user can retry after a failure.
       actionInFlight = false;
-      commitButton.disabled = false;
+      context.commitGate.busy = false;
+      context.caption.update();
       removeButton.disabled = !context.model.removeEnabled;
       console.error(error);
     });
@@ -215,10 +222,16 @@ async function initPopup(): Promise<void> {
       "Other",
     onStateChange: () => notifyCaption(),
   });
+  // wireActions runs after this, so it can report a busy commit back to the
+  // caption through this gate without a further indirection.
+  const commitGate = { busy: false };
   // setupCommitCaption assigns the caption right away, so the popup shows the
   // correct action even before the first recomputation and for a URL-less tab.
   const caption = setupCommitCaption({
     button: getElement<HTMLButtonElement>("btn-commit"),
+    nameInput,
+    model,
+    isBusy: () => commitGate.busy,
     getPickerState: () => picker.getState(),
     existingBookmark: existingBookmarkOf(model),
   });
@@ -232,6 +245,8 @@ async function initPopup(): Promise<void> {
     defaultFolderId: settings.defaultFolderId,
     picker,
     nameInput,
+    caption,
+    commitGate,
   });
 }
 
