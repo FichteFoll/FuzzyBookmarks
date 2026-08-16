@@ -2,36 +2,18 @@
 
 import { describe, expect, it } from "vitest";
 
+import type { CommitInput } from "../lib/bookmark-actions";
 import { setupCommitCaption, type CommitCaptionHandle } from "./commit-caption";
-import type { PickerState } from "./folder-picker";
-import type { PopupModel } from "./model";
 
 const EXISTING_BOOKMARK = { id: "bm1", parentId: "folder1" };
+const OTHER_FOLDER_ID = "folder2";
+const DEFAULT_FOLDER_ID = "default_folder";
 const PAGE_TITLE = "Original title";
-
-function pickerState(narrowed: boolean): PickerState {
-  return {
-    query: narrowed ? "js" : "",
-    items: [],
-    selectedIndex: 0,
-    userNavigated: false,
-  };
-}
-
-function popupModel(pageTitle: string): PopupModel {
-  return {
-    pageTitle,
-    favIconUrl: null,
-    bookmarkId: EXISTING_BOOKMARK.id,
-    folderId: EXISTING_BOOKMARK.parentId,
-    dateAdded: null,
-    removeEnabled: true,
-  };
-}
 
 function mount(options: {
   existingBookmark?: { id: string; parentId: string } | null;
   narrowed?: boolean;
+  selectedFolderId?: string | null;
   pageTitle?: string;
   busy?: boolean;
 }): {
@@ -49,16 +31,34 @@ function mount(options: {
   document.body.replaceChildren(nameInput, button);
   let narrowed = options.narrowed ?? false;
   let busy = options.busy ?? false;
+  const existingBookmark =
+    options.existingBookmark === undefined
+      ? EXISTING_BOOKMARK
+      : options.existingBookmark;
+  const selectedFolderId =
+    options.selectedFolderId === undefined
+      ? OTHER_FOLDER_ID
+      : options.selectedFolderId;
+
+  // Stands in for main.ts's single buildCommitInput call site: it reads the
+  // live name input, so the caption's own input listener still shows.
+  const buildInput = (copyRequested: boolean): CommitInput => ({
+    url: "https://example.com/",
+    title: nameInput.value,
+    queryNarrowed: narrowed,
+    selectedFolderId,
+    createFolder: null,
+    existingBookmark,
+    copyRequested,
+    defaultFolderId: DEFAULT_FOLDER_ID,
+    titleChanged: nameInput.value !== pageTitle,
+  });
+
   const caption = setupCommitCaption({
     button,
     nameInput,
-    model: popupModel(pageTitle),
     isBusy: () => busy,
-    getPickerState: () => pickerState(narrowed),
-    existingBookmark:
-      options.existingBookmark === undefined
-        ? EXISTING_BOOKMARK
-        : options.existingBookmark,
+    buildInput,
   });
   return {
     button,
@@ -289,6 +289,57 @@ describe("setupCommitCaption", () => {
     typeName("A new title");
 
     expect(button.textContent).toBe("Create");
+    expect(button.disabled).toBe(false);
+  });
+
+  // The bookmark's own folder is highlighted: the target folder is unchanged,
+  // so the commit is a no-op even though the list is narrowed.
+  it("captions the bookmark's own folder as a disabled Save", () => {
+    const { button } = mount({
+      narrowed: true,
+      selectedFolderId: EXISTING_BOOKMARK.parentId,
+    });
+
+    expect(button.textContent).toBe("Save");
+    expect(button.disabled).toBe(true);
+  });
+
+  it("captions an edited name on the bookmark's own folder as Rename", () => {
+    const { button, typeName } = mount({
+      narrowed: true,
+      selectedFolderId: EXISTING_BOOKMARK.parentId,
+    });
+
+    typeName("A new title");
+
+    expect(button.textContent).toBe("Rename");
+    expect(button.disabled).toBe(false);
+  });
+
+  // Shift cannot duplicate a bookmark into the folder it already sits in.
+  it("ignores Shift on the bookmark's own folder", () => {
+    const { button } = mount({
+      narrowed: true,
+      selectedFolderId: EXISTING_BOOKMARK.parentId,
+    });
+
+    pressShift();
+
+    expect(button.textContent).toBe("Save");
+    expect(button.disabled).toBe(true);
+  });
+
+  it("captions another folder as Move, and as Copy while Shift is held", () => {
+    const { button } = mount({
+      narrowed: true,
+      selectedFolderId: OTHER_FOLDER_ID,
+    });
+    expect(button.textContent).toBe("Move");
+    expect(button.disabled).toBe(false);
+
+    pressShift();
+
+    expect(button.textContent).toBe("Copy");
     expect(button.disabled).toBe(false);
   });
 

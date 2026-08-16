@@ -6,6 +6,7 @@ import {
   applyCommit,
   removeBookmark,
   resolveCommit,
+  type CommitInput,
   type CommitPlan,
 } from "../lib/bookmark-actions";
 import {
@@ -46,12 +47,10 @@ function existingBookmarkOf(
 }
 
 interface CommitContext {
-  url: string;
   model: PopupModel;
-  folders: FolderEntry[];
   defaultFolderId: string | null;
   picker: FolderPickerHandle;
-  nameInput: HTMLInputElement;
+  buildInput: (copyRequested: boolean) => CommitInput;
   caption: CommitCaptionHandle;
   commitGate: { busy: boolean };
 }
@@ -60,17 +59,7 @@ async function commit(
   context: CommitContext,
   copyRequested: boolean,
 ): Promise<void> {
-  const { model } = context;
-  const input = buildCommitInput({
-    url: context.url,
-    title: context.nameInput.value,
-    picker: context.picker.getState(),
-    folders: context.folders,
-    existingBookmark: existingBookmarkOf(model),
-    copyRequested,
-    defaultFolderId: context.defaultFolderId,
-    titleChanged: isTitleChanged(model, context.nameInput.value),
-  });
+  const input = context.buildInput(copyRequested);
   const plan = resolveCommit(input);
   await applyCommit(plan);
   await recordCommit(context, plan);
@@ -225,26 +214,37 @@ async function initPopup(): Promise<void> {
   // wireActions runs after this, so it can report a busy commit back to the
   // caption through this gate without a further indirection.
   const commitGate = { busy: false };
+  // One construction site for the commit input: the caption must describe the
+  // commit that Enter or a click would actually perform.
+  // The url ?? "" is what lets the caption exist for a URL-less tab, where
+  // initPopup returns before wireActions; the kind never reads url.
+  const buildInput = (copyRequested: boolean): CommitInput =>
+    buildCommitInput({
+      url: url ?? "",
+      title: nameInput.value,
+      picker: picker.getState(),
+      folders,
+      existingBookmark: existingBookmarkOf(model),
+      copyRequested,
+      defaultFolderId: settings.defaultFolderId,
+      titleChanged: isTitleChanged(model, nameInput.value),
+    });
   // setupCommitCaption assigns the caption right away, so the popup shows the
   // correct action even before the first recomputation and for a URL-less tab.
   const caption = setupCommitCaption({
     button: getElement<HTMLButtonElement>("btn-commit"),
     nameInput,
-    model,
     isBusy: () => commitGate.busy,
-    getPickerState: () => picker.getState(),
-    existingBookmark: existingBookmarkOf(model),
+    buildInput,
   });
   notifyCaption = () => caption.update();
 
   if (url === null) return;
   wireActions({
-    url,
     model,
-    folders,
     defaultFolderId: settings.defaultFolderId,
     picker,
-    nameInput,
+    buildInput,
     caption,
     commitGate,
   });

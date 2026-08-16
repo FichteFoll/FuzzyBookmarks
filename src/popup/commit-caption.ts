@@ -1,19 +1,17 @@
 // Commit button caption: keeps #btn-commit's label naming the action a
-// commit would actually perform, following the picker's narrowed state,
-// the name input and the Shift key while the popup is open,
+// commit would actually perform. It names whatever the commit input says,
+// which covers the folder a commit would target as well as the name input
+// and the Shift key while the popup is open,
 // and disables the button while that action would change nothing.
 
-import { resolveCommitKind } from "../lib/bookmark-actions";
-import { isNarrowed, type PickerState } from "./folder-picker";
-import { commitButtonCaption, isTitleChanged, type PopupModel } from "./model";
+import { resolveCommitKind, type CommitInput } from "../lib/bookmark-actions";
+import { commitButtonCaption } from "./model";
 
 export interface CommitCaptionOptions {
   button: HTMLButtonElement;
   nameInput: HTMLInputElement;
-  model: PopupModel;
   isBusy: () => boolean;
-  getPickerState: () => PickerState;
-  existingBookmark: { id: string; parentId: string } | null;
+  buildInput: (copyRequested: boolean) => CommitInput;
 }
 
 export interface CommitCaptionHandle {
@@ -30,24 +28,8 @@ export function setupCommitCaption(
   // owns "an action is in flight" and reports it back through isBusy().
   // Neither may clear the other's reason, so both are read on every update.
   const update = (): void => {
-    // The folder fields are still placeholders here: this hand-assembled input
-    // knows nothing about the picked folder, so the folder comparison in
-    // resolveCommitKind cannot see it yet. The next commit replaces this with
-    // the very input a commit would use.
-    const kind = resolveCommitKind({
-      url: "",
-      title: options.nameInput.value,
-      existingBookmark: options.existingBookmark,
-      queryNarrowed: isNarrowed(options.getPickerState()),
-      selectedFolderId: null,
-      createFolder: null,
-      defaultFolderId: null,
-      copyRequested: shiftHeld,
-      titleChanged: isTitleChanged(options.model, options.nameInput.value),
-    });
+    const kind = resolveCommitKind(options.buildInput(shiftHeld));
     options.button.textContent = commitButtonCaption(kind);
-    // After the rename kind exists, "update" is exactly the no-op commit:
-    // an existing bookmark, no folder narrowing and no name edit.
     options.button.disabled = options.isBusy() || kind === "update";
   };
 
