@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment happy-dom
+
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveCommit } from "../lib/bookmark-actions";
 import type { FolderEntry } from "../lib/folders";
@@ -6,7 +8,9 @@ import type { PickerItem, PickerState } from "./folder-picker";
 import {
   buildCommitInput,
   buildSelectorRows,
+  pickBookmark,
   type CommitFormState,
+  type SelectorRow,
 } from "./selector";
 
 function folder(id: string, path: string, parentId?: string): FolderEntry {
@@ -244,5 +248,80 @@ describe("buildCommitInput", () => {
 
     expect(input.selectedFolderId).toBeNull();
     expect(input.createFolder).toBeNull();
+  });
+});
+
+describe("pickBookmark", () => {
+  const rows: SelectorRow[] = [
+    {
+      bookmarkId: "b1",
+      title: "First",
+      folderPath: "Other/dev",
+      dateAdded: 2000,
+    },
+    {
+      bookmarkId: "b2",
+      title: "Second",
+      folderPath: "Menu/news",
+      dateAdded: 1000,
+    },
+  ];
+
+  const documentSpies: Array<(event: KeyboardEvent) => void> = [];
+
+  afterEach(() => {
+    for (const spy of documentSpies) {
+      document.removeEventListener("keydown", spy);
+    }
+    documentSpies.length = 0;
+    document.body.replaceChildren();
+  });
+
+  function setUp(): {
+    container: HTMLElement;
+    choice: Promise<SelectorRow>;
+    documentSpy: ReturnType<typeof vi.fn>;
+  } {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const choice = pickBookmark(container, rows);
+    // Mirrors the document-level Enter handler that `wireActions` attaches
+    // as soon as the pick resolves.
+    const documentSpy = vi.fn();
+    document.addEventListener("keydown", documentSpy);
+    documentSpies.push(documentSpy);
+    return { container, choice, documentSpy };
+  }
+
+  function pressKey(container: HTMLElement, key: string): void {
+    container.dispatchEvent(
+      new KeyboardEvent("keydown", { key, bubbles: true }),
+    );
+  }
+
+  it("focuses its container", () => {
+    const { container } = setUp();
+
+    expect(document.activeElement).toBe(container);
+  });
+
+  it("resolves with the selected row on Enter without letting it reach document", async () => {
+    const { container, choice, documentSpy } = setUp();
+
+    pressKey(container, "Enter");
+
+    await expect(choice).resolves.toEqual(rows[0]);
+    expect(documentSpy).not.toHaveBeenCalled();
+  });
+
+  it("moves the selection on ArrowDown without letting it reach document", () => {
+    const { container, documentSpy } = setUp();
+
+    pressKey(container, "ArrowDown");
+
+    const options = container.querySelectorAll("li");
+    expect(options[0]?.getAttribute("aria-selected")).toBeNull();
+    expect(options[1]?.getAttribute("aria-selected")).toBe("true");
+    expect(documentSpy).not.toHaveBeenCalled();
   });
 });

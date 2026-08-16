@@ -116,9 +116,14 @@ export function pickBookmark(
       list.append(li);
     });
 
+    // Every handled key is also stopped from propagating:
+    // the pick resolves during this very event's dispatch, so the awaiting
+    // popup startup reaches `wireActions` and attaches its document-level
+    // Enter handler before the event finishes bubbling to `document`.
     container.addEventListener("keydown", (event) => {
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault();
+        event.stopPropagation();
         const delta = event.key === "ArrowDown" ? 1 : -1;
         selectedIndex = (selectedIndex + delta + rows.length) % rows.length;
         applySelection();
@@ -126,6 +131,7 @@ export function pickBookmark(
       }
       if (event.key === "Enter") {
         event.preventDefault();
+        event.stopPropagation();
         const row = rows[selectedIndex];
         if (row) pick(row);
       }
