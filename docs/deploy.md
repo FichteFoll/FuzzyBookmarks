@@ -52,9 +52,10 @@ and the credentials are never exposed to a run that would have failed anyway.
    The secret is shown exactly once.
 
 The `browser_specific_settings.gecko.id` in `manifest.json`
-(`fuzzybookmarks@fichtefoll`)
+(`@fuzzybookmarks.fichtefoll`)
 must stay stable across versions,
 otherwise AMO treats every submission as a brand new add-on.
+It can only be changed before the first submission.
 
 ### 2. Protected environment
 
