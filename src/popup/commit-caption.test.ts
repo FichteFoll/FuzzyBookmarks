@@ -144,6 +144,54 @@ describe("setupCommitCaption", () => {
     expect(button.textContent).toBe("Move");
   });
 
+  // Observed in Firefox with a caps/shift layout option: the release of
+  // ShiftLeft arrives as key: "CapsLock" on the same code, carrying the
+  // pre-event modifier state.
+  it("switches back to Move when the Shift release reports another key", () => {
+    const { button } = mount({ narrowed: true });
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Shift",
+        code: "ShiftLeft",
+        shiftKey: false,
+      }),
+    );
+    expect(button.textContent).toBe("Copy");
+
+    document.dispatchEvent(
+      new KeyboardEvent("keyup", {
+        key: "CapsLock",
+        code: "ShiftLeft",
+        shiftKey: true,
+      }),
+    );
+
+    expect(button.textContent).toBe("Move");
+  });
+
+  it("tracks the right-hand Shift key by its code as well", () => {
+    const { button } = mount({ narrowed: true });
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Shift",
+        code: "ShiftRight",
+        shiftKey: false,
+      }),
+    );
+    expect(button.textContent).toBe("Copy");
+
+    document.dispatchEvent(
+      new KeyboardEvent("keyup", {
+        key: "CapsLock",
+        code: "ShiftRight",
+        shiftKey: true,
+      }),
+    );
+
+    expect(button.textContent).toBe("Move");
+  });
+
   it("takes the modifier state from a key event that is not Shift", () => {
     const { button } = mount({ narrowed: true });
 
