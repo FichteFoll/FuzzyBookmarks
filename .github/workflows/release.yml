@@ -86,4 +86,5 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
+            --draft \
             web-ext-artifacts/*.xpi

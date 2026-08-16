@@ -17,7 +17,7 @@ and runs three jobs in sequence:
 | --------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
 | `verify`  | `contents: read`  | Lint, format check, typecheck, test, build, `web-ext lint`; uploads `dist/` as an artifact             |
 | `sign`    | `contents: read`  | Gated on the `amo-release` environment; signs `dist/` via the AMO API and uploads the resulting `.xpi` |
-| `release` | `contents: write` | Attaches the `.xpi` to the GitHub release for the tag                                                  |
+| `release` | `contents: write` | Attaches the `.xpi` to a draft GitHub release for the tag                                              |
 
 The gate sits between building and signing,
 so the approval prompt only appears once the build is already green
@@ -113,6 +113,9 @@ so a release needs no manual version editing anywhere.
    with auto-generated notes.
    AMO returns the file under the slug it generated for the add-on,
    so `sign` renames it to `fuzzybookmarks-<version>.xpi` beforehand.
+7. The release is created as a draft,
+   so edit the generated notes
+   and publish it from the Releases tab when they read well.
 
 ## Installing the result
 
