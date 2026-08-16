@@ -1,14 +1,27 @@
 // Popup data model: what the popup shows about the current page
 // and, if it exists, the bookmark already filed for it.
 
+import type { CommitKind } from "../lib/bookmark-actions";
+
 export interface PopupModel {
   pageTitle: string;
   favIconUrl: string | null;
   bookmarkId: string | null;
   folderId: string | null;
   dateAdded: number | null;
-  commitLabel: "Create" | "Save";
   removeEnabled: boolean;
+}
+
+// Keyed by kind so a new commit kind cannot be forgotten here.
+const COMMIT_CAPTIONS: Record<CommitKind, string> = {
+  create: "Create",
+  update: "Save",
+  move: "Move",
+  copy: "Copy",
+};
+
+export function commitButtonCaption(kind: CommitKind): string {
+  return COMMIT_CAPTIONS[kind];
 }
 
 type PopupTab = Pick<browser.tabs.Tab, "title" | "favIconUrl" | "url">;
@@ -31,7 +44,6 @@ export function derivePopupModel(
       bookmarkId: null,
       folderId: null,
       dateAdded: null,
-      commitLabel: "Create",
       removeEnabled: false,
     };
   }
@@ -42,7 +54,6 @@ export function derivePopupModel(
     bookmarkId: bookmark.id,
     folderId: bookmark.parentId ?? null,
     dateAdded: bookmark.dateAdded ?? null,
-    commitLabel: "Save",
     removeEnabled: true,
   };
 }

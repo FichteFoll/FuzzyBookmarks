@@ -57,6 +57,10 @@ do not edit `scripts/build.mjs` to register entry points.
   the alias mapping is defined exactly once, in `folders.ts`.
 - Every user-visible bookmark mutation (create/move/copy/remove)
   goes through `applyCommit` in `src/lib/bookmark-actions.ts`.
+- The commit plan kind is decided exactly once,
+  in `resolveCommitKind` in `src/lib/bookmark-actions.ts`;
+  UI captions derive from that kind
+  instead of re-deriving the create/update/move/copy conditions.
 - `storage.local` keys: `settings`, `queryMemory`, `folderRecency`.
 
 ## Commits

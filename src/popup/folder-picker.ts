@@ -134,6 +134,7 @@ export interface FolderPickerOptions {
   currentFolderId: string | null;
   recentFolderIds: string[];
   createAnchorPath: string;
+  onStateChange?: (state: PickerState) => void;
 }
 
 export interface FolderPickerHandle {
@@ -156,6 +157,8 @@ export function setupFolderPicker(
   const selectedItem = (): PickerItem | null =>
     state.items[state.selectedIndex] ?? null;
 
+  const notify = (): void => options.onStateChange?.(state);
+
   const applySelection = (): void => {
     for (let i = 0; i < list.children.length; i++) {
       const li = list.children[i] as HTMLElement;
@@ -175,6 +178,7 @@ export function setupFolderPicker(
   const selectIndex = (index: number): void => {
     state = { ...state, selectedIndex: index, userNavigated: true };
     applySelection();
+    notify();
   };
 
   const renderItem = (item: PickerItem, index: number): HTMLLIElement => {
@@ -194,6 +198,7 @@ export function setupFolderPicker(
   const render = (): void => {
     list.replaceChildren(...state.items.map(renderItem));
     applySelection();
+    notify();
   };
 
   const recompute = async (query: string): Promise<void> => {
@@ -219,6 +224,7 @@ export function setupFolderPicker(
     event.preventDefault();
     state = moveSelection(state, event.key === "ArrowDown" ? 1 : -1);
     applySelection();
+    notify();
   });
 
   void recompute(input.value);

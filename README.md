@@ -39,6 +39,16 @@ If the page is already bookmarked,
 Enter moves the existing bookmark there instead of duplicating it,
 and Shift+Enter files a copy while leaving the original untouched.
 
+The commit button's caption names the action it will perform:
+`Create` when the page is not bookmarked yet,
+`Save` when it is bookmarked and the folder list was not narrowed
+(the name is updated in place),
+`Move` when it is bookmarked and a folder was picked,
+and `Copy` when Shift is held in that same situation.
+The caption follows the Shift key live,
+and holding Shift applies whether the action is triggered
+by Enter or by clicking the button.
+
 Pressing Enter without typing or navigating
 files a new bookmark into the configured default folder,
 or saves an existing bookmark in place
@@ -46,7 +56,7 @@ or saves an existing bookmark in place
 
 Tab and Shift+Tab cycle through
 the name input, the folder input,
-and the Remove and Create/Save buttons.
+and the Remove and commit buttons.
 Remove deletes the bookmark being edited and closes the popup;
 it is disabled while the page is not bookmarked.
 
@@ -123,6 +133,12 @@ pnpm install
 | `pnpm format:check` | Verify formatting                              |
 | `pnpm typecheck`    | `tsc --noEmit`                                 |
 | `pnpm test`         | Vitest unit tests                              |
+
+Tests run in Vitest's default `node` environment.
+DOM-dependent popup tests run against
+[happy-dom](https://github.com/capricorn86/happy-dom) instead,
+opted into per file with a `// @vitest-environment happy-dom` docblock
+on the file's first line.
 
 ### web-ext workflow
 
