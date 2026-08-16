@@ -30,9 +30,18 @@ export function setupCommitCaption(
   // owns "an action is in flight" and reports it back through isBusy().
   // Neither may clear the other's reason, so both are read on every update.
   const update = (): void => {
+    // The folder fields are still placeholders here: this hand-assembled input
+    // knows nothing about the picked folder, so the folder comparison in
+    // resolveCommitKind cannot see it yet. The next commit replaces this with
+    // the very input a commit would use.
     const kind = resolveCommitKind({
+      url: "",
+      title: options.nameInput.value,
       existingBookmark: options.existingBookmark,
       queryNarrowed: isNarrowed(options.getPickerState()),
+      selectedFolderId: null,
+      createFolder: null,
+      defaultFolderId: null,
       copyRequested: shiftHeld,
       titleChanged: isTitleChanged(options.model, options.nameInput.value),
     });

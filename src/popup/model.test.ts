@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { resolveCommitKind } from "../lib/bookmark-actions";
+import type { CommitInput } from "../lib/bookmark-actions";
 import { commitButtonCaption, derivePopupModel } from "./model";
 
 describe("derivePopupModel", () => {
@@ -52,13 +53,21 @@ describe("derivePopupModel", () => {
 describe("commitButtonCaption", () => {
   const existingBookmark = { id: "bm1", parentId: "folder1" };
 
-  const caption = (input: {
-    existingBookmark: { id: string; parentId: string } | null;
-    queryNarrowed: boolean;
-    copyRequested: boolean;
-    titleChanged?: boolean;
-  }): string =>
-    commitButtonCaption(resolveCommitKind({ titleChanged: false, ...input }));
+  const caption = (overrides: Partial<CommitInput>): string =>
+    commitButtonCaption(
+      resolveCommitKind({
+        url: "https://example.com/",
+        title: "Example",
+        queryNarrowed: false,
+        selectedFolderId: null,
+        createFolder: null,
+        existingBookmark: null,
+        copyRequested: false,
+        defaultFolderId: null,
+        titleChanged: false,
+        ...overrides,
+      }),
+    );
 
   it("reads Create when the page is not bookmarked yet", () => {
     expect(
@@ -103,15 +112,37 @@ describe("commitButtonCaption", () => {
     ).toBe("Rename");
   });
 
-  it("reads Move when the page is bookmarked and the list is narrowed", () => {
+  it("reads Move when the page is bookmarked and another folder is selected", () => {
     expect(
-      caption({ existingBookmark, queryNarrowed: true, copyRequested: false }),
+      caption({
+        existingBookmark,
+        queryNarrowed: true,
+        selectedFolderId: "folder2",
+        copyRequested: false,
+      }),
     ).toBe("Move");
   });
 
-  it("reads Copy when the narrowed list is committed with Shift held", () => {
+  it("reads Copy when another folder is committed with Shift held", () => {
     expect(
-      caption({ existingBookmark, queryNarrowed: true, copyRequested: true }),
+      caption({
+        existingBookmark,
+        queryNarrowed: true,
+        selectedFolderId: "folder2",
+        copyRequested: true,
+      }),
     ).toBe("Copy");
+  });
+
+  it("reads Rename when the narrowed selection is the bookmark's own folder and the name was edited", () => {
+    expect(
+      caption({
+        existingBookmark,
+        queryNarrowed: true,
+        selectedFolderId: "folder1",
+        copyRequested: false,
+        titleChanged: true,
+      }),
+    ).toBe("Rename");
   });
 });

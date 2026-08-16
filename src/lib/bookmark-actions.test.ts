@@ -224,6 +224,100 @@ describe("resolveCommit", () => {
     });
   });
 
+  it("updates in place when the narrowed selection is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "update",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("renames in place when only the title changed in the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "rename",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("ignores a requested copy into the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      copyRequested: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("renames rather than copies into the bookmark's own folder with an edited title", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      copyRequested: true,
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "rename",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("updates in place for a create-folder selection that is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      createFolder: { parentId: "home", segments: [] },
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("moves into a folder still to be created below the bookmark's own folder", () => {
+    const createFolder = { parentId: "home", segments: ["sub"] };
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      createFolder,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "move",
+      bookmarkId: "bm",
+      parentId: "home",
+      createFolder,
+    });
+  });
+
+  it("updates in place when the narrowed fallback is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: null,
+      defaultFolderId: "home",
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
+    });
+  });
+
   it("moves into a to-be-created folder", () => {
     const createFolder = { parentId: "anchor", segments: ["a"] };
     const input = makeInput({

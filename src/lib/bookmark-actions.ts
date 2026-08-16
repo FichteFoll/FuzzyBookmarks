@@ -46,14 +46,16 @@ export type CommitKind = CommitPlan["kind"];
 
 // The single place deciding which action a commit performs,
 // so UI captions can name the action without re-deriving the conditions.
-export function resolveCommitKind(
-  input: Pick<
-    CommitInput,
-    "existingBookmark" | "queryNarrowed" | "copyRequested" | "titleChanged"
-  >,
-): CommitKind {
+export function resolveCommitKind(input: CommitInput): CommitKind {
   if (!input.existingBookmark) return "create";
-  if (!input.queryNarrowed) return input.titleChanged ? "rename" : "update";
+  // resolveTarget already falls back to the default folder when the list is
+  // not narrowed, so the narrowing test must precede the folder comparison.
+  if (
+    !input.queryNarrowed ||
+    !targetsAnotherFolder(input, input.existingBookmark.parentId)
+  ) {
+    return input.titleChanged ? "rename" : "update";
+  }
   return input.copyRequested ? "copy" : "move";
 }
 
@@ -87,6 +89,20 @@ function resolveTarget(input: CommitInput): {
   }
   const selected = input.queryNarrowed ? input.selectedFolderId : null;
   return { parentId: selected ?? input.defaultFolderId ?? FALLBACK_PARENT_ID };
+}
+
+// The folder comparison lives beside resolveTarget so the kind and the plan
+// can never disagree about where a commit would file the bookmark.
+function targetsAnotherFolder(
+  input: CommitInput,
+  currentParentId: string,
+): boolean {
+  const target = resolveTarget(input);
+  // Segments still to be created always mean a new, different folder.
+  if (target.createFolder && target.createFolder.segments.length > 0) {
+    return true;
+  }
+  return target.parentId !== currentParentId;
 }
 
 export async function applyCommit(plan: CommitPlan): Promise<void> {
