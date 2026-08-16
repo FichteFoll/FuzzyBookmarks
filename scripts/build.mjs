@@ -1,11 +1,22 @@
 import { build, context } from "esbuild";
-import { cpSync, globSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  globSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const distDir = path.join(root, "dist");
 const watch = process.argv.includes("--watch");
+
+function readJson(file) {
+  return JSON.parse(readFileSync(path.join(root, file), "utf8"));
+}
 
 // Every src/<part>/main.ts is an extension entry point (background, popup, ...).
 // New parts are picked up by convention; do not list entry points manually.
@@ -24,8 +35,22 @@ const options = {
   logLevel: "info",
 };
 
+// package.json is the single source of truth for the version, so that
+// `pnpm version` alone bumps the manifest, the commit and the release tag.
+function writeManifest() {
+  const manifest = {
+    ...readJson("manifest.json"),
+    version: readJson("package.json").version,
+  };
+  mkdirSync(distDir, { recursive: true });
+  writeFileSync(
+    path.join(distDir, "manifest.json"),
+    JSON.stringify(manifest, null, 2) + "\n",
+  );
+}
+
 function copyAssets() {
-  cpSync(path.join(root, "manifest.json"), path.join(distDir, "manifest.json"));
+  writeManifest();
   cpSync(path.join(root, "icons"), path.join(distDir, "icons"), {
     recursive: true,
   });
