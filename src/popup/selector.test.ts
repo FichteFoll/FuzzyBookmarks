@@ -324,4 +324,15 @@ describe("pickBookmark", () => {
     expect(options[1]?.getAttribute("aria-selected")).toBe("true");
     expect(documentSpy).not.toHaveBeenCalled();
   });
+
+  it("renders the folder path on its own line, separate from the title", () => {
+    const { container } = setUp();
+
+    const firstRow = container.querySelector("li");
+    const title = firstRow?.querySelector(".selector-title");
+    const path = firstRow?.querySelector(".selector-path");
+
+    expect(path?.textContent).toBe("Other/dev");
+    expect(title?.querySelector(".selector-path")).toBeNull();
+  });
 });

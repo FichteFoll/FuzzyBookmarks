@@ -143,9 +143,7 @@ body {
 }
 
 #bookmark-selector li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  display: block;
   padding: 4px 6px;
   cursor: pointer;
 }
@@ -155,17 +153,28 @@ body {
 }
 
 #bookmark-selector .selector-title {
-  flex: 1;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#bookmark-selector .selector-folder,
-#bookmark-selector .selector-date {
-  flex-shrink: 0;
+#bookmark-selector .selector-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 0.8rem;
   color: var(--muted-fg);
+}
+
+#bookmark-selector .selector-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#bookmark-selector .selector-date {
+  flex-shrink: 0;
 }
 
 .button-bar {

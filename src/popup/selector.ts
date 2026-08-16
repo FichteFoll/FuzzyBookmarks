@@ -150,24 +150,25 @@ export function pickBookmark(
 function renderRow(row: SelectorRow): HTMLLIElement {
   const li = document.createElement("li");
   li.setAttribute("role", "option");
-  const cells: Array<{ className: string; text: string; title?: string }> = [
-    { className: "selector-title", text: row.title },
-    { className: "selector-folder", text: row.folderPath },
-    {
-      className: "selector-date",
-      text:
-        row.dateAdded === null
-          ? ""
-          : formatRelativeTime(row.dateAdded, Date.now()),
-      title: row.dateAdded === null ? "" : formatAbsoluteTime(row.dateAdded),
-    },
-  ];
-  for (const { className, text, title } of cells) {
-    const span = document.createElement("span");
-    span.className = className;
-    span.textContent = text;
-    if (title !== undefined) span.title = title;
-    li.append(span);
-  }
+
+  const title = document.createElement("span");
+  title.className = "selector-title";
+  title.textContent = row.title;
+
+  const path = document.createElement("span");
+  path.className = "selector-path";
+  path.textContent = row.folderPath;
+
+  const date = document.createElement("span");
+  date.className = "selector-date";
+  date.textContent =
+    row.dateAdded === null ? "" : formatRelativeTime(row.dateAdded, Date.now());
+  date.title = row.dateAdded === null ? "" : formatAbsoluteTime(row.dateAdded);
+
+  const meta = document.createElement("span");
+  meta.className = "selector-meta";
+  meta.append(path, date);
+
+  li.append(title, meta);
   return li;
 }
