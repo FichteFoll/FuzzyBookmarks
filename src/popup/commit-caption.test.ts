@@ -87,6 +87,40 @@ describe("setupCommitCaption", () => {
     expect(button.textContent).toBe("Move");
   });
 
+  it("switches to Copy when Firefox reports the pre-event modifier state", () => {
+    const { button } = mount({ narrowed: true });
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Shift", shiftKey: false }),
+    );
+
+    expect(button.textContent).toBe("Copy");
+  });
+
+  it("switches back to Move when Firefox reports the pre-event modifier state", () => {
+    const { button } = mount({ narrowed: true });
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Shift", shiftKey: false }),
+    );
+    expect(button.textContent).toBe("Copy");
+
+    document.dispatchEvent(
+      new KeyboardEvent("keyup", { key: "Shift", shiftKey: true }),
+    );
+
+    expect(button.textContent).toBe("Move");
+  });
+
+  it("takes the modifier state from a key event that is not Shift", () => {
+    const { button } = mount({ narrowed: true });
+
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "a", shiftKey: true }),
+    );
+
+    expect(button.textContent).toBe("Copy");
+  });
+
   it("does not stay stuck on Copy when the popup loses focus", () => {
     const { button } = mount({ narrowed: true });
     pressShift();

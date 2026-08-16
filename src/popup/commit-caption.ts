@@ -33,11 +33,14 @@ export function setupCommitCaption(
     );
   };
 
-  // Read event.shiftKey instead of testing event.key === "Shift": that also
-  // corrects the state when the popup's first key event already carries a
-  // held Shift.
+  // Firefox reports event.shiftKey on the Shift key's own keydown/keyup as the
+  // state before the event, which inverted the caption; the event type is
+  // unambiguous there. Other key events still carry the truth, which also
+  // corrects the state when the popup's first key event already arrives with
+  // Shift held.
   const trackShift = (event: KeyboardEvent): void => {
-    shiftHeld = event.shiftKey;
+    shiftHeld =
+      event.key === "Shift" ? event.type === "keydown" : event.shiftKey;
     update();
   };
   document.addEventListener("keydown", trackShift);
