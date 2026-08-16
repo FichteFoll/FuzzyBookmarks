@@ -6,6 +6,7 @@ import {
   applyCommit,
   removeBookmark,
   resolveCommit,
+  type CommitInput,
   type CommitPlan,
 } from "../lib/bookmark-actions";
 import {
@@ -20,9 +21,9 @@ import {
 } from "../lib/query-memory";
 import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
-import { setupCommitCaption } from "./commit-caption";
+import { setupCommitCaption, type CommitCaptionHandle } from "./commit-caption";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
-import { derivePopupModel, type PopupModel } from "./model";
+import { derivePopupModel, isTitleChanged, type PopupModel } from "./model";
 import {
   buildCommitInput,
   buildSelectorRows,
@@ -46,28 +47,19 @@ function existingBookmarkOf(
 }
 
 interface CommitContext {
-  url: string;
   model: PopupModel;
-  folders: FolderEntry[];
   defaultFolderId: string | null;
   picker: FolderPickerHandle;
-  nameInput: HTMLInputElement;
+  buildInput: (copyRequested: boolean) => CommitInput;
+  caption: CommitCaptionHandle;
+  commitGate: { busy: boolean };
 }
 
 async function commit(
   context: CommitContext,
   copyRequested: boolean,
 ): Promise<void> {
-  const { model } = context;
-  const input = buildCommitInput({
-    url: context.url,
-    title: context.nameInput.value,
-    picker: context.picker.getState(),
-    folders: context.folders,
-    existingBookmark: existingBookmarkOf(model),
-    copyRequested,
-    defaultFolderId: context.defaultFolderId,
-  });
+  const input = context.buildInput(copyRequested);
   const plan = resolveCommit(input);
   await applyCommit(plan);
   await recordCommit(context, plan);
@@ -92,7 +84,8 @@ async function resolveTargetFolderId(
   context: CommitContext,
   plan: CommitPlan,
 ): Promise<string | null> {
-  if (plan.kind === "update") return null;
+  // Neither an update nor a rename targets a folder, so neither records one.
+  if (plan.kind === "update" || plan.kind === "rename") return null;
   if (!plan.createFolder) return plan.parentId;
   // applyCommit does not report the folders it created;
   // re-resolve the create path against a fresh folder list
@@ -115,16 +108,21 @@ function wireActions(context: CommitContext): void {
   // Re-entrancy guard: the popup stays open until the async mutation
   // resolves, so a held Enter or a double click must not launch a
   // second, concurrent commit/remove.
+  // The commit button's disabled state is written by the caption, which folds
+  // this guard in through commitGate; writing it here would clear the caption's
+  // own reason ("this commit would change nothing").
   let actionInFlight = false;
   const runExclusive = (action: () => Promise<void>): void => {
     if (actionInFlight) return;
     actionInFlight = true;
-    commitButton.disabled = true;
+    context.commitGate.busy = true;
+    context.caption.update();
     removeButton.disabled = true;
     void action().catch((error: unknown) => {
       // Re-enable the form so the user can retry after a failure.
       actionInFlight = false;
-      commitButton.disabled = false;
+      context.commitGate.busy = false;
+      context.caption.update();
       removeButton.disabled = !context.model.removeEnabled;
       console.error(error);
     });
@@ -213,23 +211,42 @@ async function initPopup(): Promise<void> {
       "Other",
     onStateChange: () => notifyCaption(),
   });
+  // wireActions runs after this, so it can report a busy commit back to the
+  // caption through this gate without a further indirection.
+  const commitGate = { busy: false };
+  // One construction site for the commit input: the caption must describe the
+  // commit that Enter or a click would actually perform.
+  // The url ?? "" is what lets the caption exist for a URL-less tab, where
+  // initPopup returns before wireActions; the kind never reads url.
+  const buildInput = (copyRequested: boolean): CommitInput =>
+    buildCommitInput({
+      url: url ?? "",
+      title: nameInput.value,
+      picker: picker.getState(),
+      folders,
+      existingBookmark: existingBookmarkOf(model),
+      copyRequested,
+      defaultFolderId: settings.defaultFolderId,
+      titleChanged: isTitleChanged(model, nameInput.value),
+    });
   // setupCommitCaption assigns the caption right away, so the popup shows the
   // correct action even before the first recomputation and for a URL-less tab.
   const caption = setupCommitCaption({
     button: getElement<HTMLButtonElement>("btn-commit"),
-    getPickerState: () => picker.getState(),
-    existingBookmark: existingBookmarkOf(model),
+    nameInput,
+    isBusy: () => commitGate.busy,
+    buildInput,
   });
   notifyCaption = () => caption.update();
 
   if (url === null) return;
   wireActions({
-    url,
     model,
-    folders,
     defaultFolderId: settings.defaultFolderId,
     picker,
-    nameInput,
+    buildInput,
+    caption,
+    commitGate,
   });
 }
 

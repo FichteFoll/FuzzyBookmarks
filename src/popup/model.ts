@@ -16,12 +16,22 @@ export interface PopupModel {
 const COMMIT_CAPTIONS: Record<CommitKind, string> = {
   create: "Create",
   update: "Save",
+  rename: "Rename",
   move: "Move",
   copy: "Copy",
 };
 
 export function commitButtonCaption(kind: CommitKind): string {
   return COMMIT_CAPTIONS[kind];
+}
+
+// The single definition of "the user edited the name":
+// the caption and the commit it describes must agree on it.
+export function isTitleChanged(
+  model: PopupModel,
+  currentTitle: string,
+): boolean {
+  return currentTitle !== model.pageTitle;
 }
 
 type PopupTab = Pick<browser.tabs.Tab, "title" | "favIconUrl" | "url">;

@@ -13,6 +13,7 @@ function makeInput(overrides: Partial<CommitInput> = {}): CommitInput {
     existingBookmark: null,
     copyRequested: false,
     defaultFolderId: null,
+    titleChanged: false,
     ...overrides,
   };
 }
@@ -137,6 +138,40 @@ describe("resolveCommit", () => {
     });
   });
 
+  it("renames in place when the title changed without narrowing", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "rename",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("updates rather than renames when the title did not change", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      titleChanged: false,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "update",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("prefers the folder change over a rename when narrowed", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "selected",
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({ kind: "move" });
+  });
+
   it("updates in place when copy is requested without narrowing", () => {
     const input = makeInput({
       existingBookmark: { id: "bm", parentId: "home" },
@@ -186,6 +221,100 @@ describe("resolveCommit", () => {
       title: "Example",
       parentId: "anchor",
       createFolder,
+    });
+  });
+
+  it("updates in place when the narrowed selection is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "update",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("renames in place when only the title changed in the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toEqual({
+      kind: "rename",
+      bookmarkId: "bm",
+      title: "Example",
+    });
+  });
+
+  it("ignores a requested copy into the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      copyRequested: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("renames rather than copies into the bookmark's own folder with an edited title", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: "home",
+      copyRequested: true,
+      titleChanged: true,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "rename",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("updates in place for a create-folder selection that is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      createFolder: { parentId: "home", segments: [] },
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
+    });
+  });
+
+  it("moves into a folder still to be created below the bookmark's own folder", () => {
+    const createFolder = { parentId: "home", segments: ["sub"] };
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      createFolder,
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "move",
+      bookmarkId: "bm",
+      parentId: "home",
+      createFolder,
+    });
+  });
+
+  it("updates in place when the narrowed fallback is the bookmark's own folder", () => {
+    const input = makeInput({
+      existingBookmark: { id: "bm", parentId: "home" },
+      queryNarrowed: true,
+      selectedFolderId: null,
+      defaultFolderId: "home",
+    });
+    expect(resolveCommit(input)).toMatchObject({
+      kind: "update",
+      bookmarkId: "bm",
     });
   });
 
@@ -298,6 +427,16 @@ describe("applyCommit", () => {
   it("updates only the title", async () => {
     const fake = installFakeBookmarks();
     await applyCommit({ kind: "update", bookmarkId: "bm", title: "New title" });
+    expect(fake.updates).toEqual([
+      { id: "bm", changes: { title: "New title" } },
+    ]);
+    expect(fake.created).toEqual([]);
+    expect(fake.moves).toEqual([]);
+  });
+
+  it("renames by updating only the title", async () => {
+    const fake = installFakeBookmarks();
+    await applyCommit({ kind: "rename", bookmarkId: "bm", title: "New title" });
     expect(fake.updates).toEqual([
       { id: "bm", changes: { title: "New title" } },
     ]);

@@ -48,6 +48,7 @@ export interface CommitFormState {
   existingBookmark: { id: string; parentId: string } | null;
   copyRequested: boolean;
   defaultFolderId: string | null;
+  titleChanged: boolean;
 }
 
 export function buildCommitInput(form: CommitFormState): CommitInput {
@@ -75,6 +76,7 @@ export function buildCommitInput(form: CommitFormState): CommitInput {
     existingBookmark: form.existingBookmark,
     copyRequested: form.copyRequested,
     defaultFolderId: form.defaultFolderId,
+    titleChanged: form.titleChanged,
   };
 }
 

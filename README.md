@@ -43,16 +43,26 @@ saves it in place including name edits.
 
 The commit button's caption names the action it will perform:
 
-| Caption  | When                                                                |
-| -------- | ------------------------------------------------------------------- |
-| `Create` | The page is not bookmarked yet                                      |
-| `Save`   | Bookmarked, folder list not narrowed (the name is updated in place) |
-| `Move`   | Bookmarked and a folder was picked                                  |
-| `Copy`   | Same as `Move`, but with Shift held                                 |
+| Caption  | When                                                              |
+| -------- | ----------------------------------------------------------------- |
+| `Create` | The page is not bookmarked yet                                    |
+| `Save`   | Bookmarked, no other folder targeted, and the name was not edited |
+| `Rename` | Bookmarked, no other folder targeted, and the name was edited     |
+| `Move`   | Bookmarked and a different folder is targeted                     |
+| `Copy`   | Same as `Move`, but with Shift held                               |
 
-The caption follows the Shift key live,
+"No other folder targeted" includes highlighting the bookmark's own current folder,
+not just leaving the list unnarrowed.
+Shift is ignored when the highlighted folder is the one the bookmark is already in,
+so a bookmark cannot be duplicated into its own folder from the popup.
+
+The caption follows the Shift key and the name input live,
 and holding Shift applies whether the action is triggered
 by Enter or by clicking the button.
+While a commit would change nothing at all
+(the caption stays `Save`),
+the button is disabled;
+Enter still closes the popup.
 
 ### Creating folders
 
