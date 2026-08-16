@@ -85,9 +85,14 @@ Remove deletes the bookmark being edited and closes the popup;
 it is disabled while the page is not bookmarked.
 
 If several bookmarks exist for the current URL,
-a selector listing name, folder, and date added
-appears before the form;
+a selector listing name, folder path, and date added
+replaces the popup's contents;
 pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
+Enter only picks here,
+it does not commit anything
+and it does not close the popup.
+The name and location form appears in its place
+once a bookmark was picked.
 
 ### Keyboard shortcut
 
