@@ -46,10 +46,15 @@ The commit button's caption names the action it will perform:
 | Caption  | When                                                              |
 | -------- | ----------------------------------------------------------------- |
 | `Create` | The page is not bookmarked yet                                    |
-| `Save`   | Bookmarked, folder list not narrowed, and the name was not edited |
-| `Rename` | Bookmarked, folder list not narrowed, and the name was edited     |
-| `Move`   | Bookmarked and a folder was picked                                |
+| `Save`   | Bookmarked, no other folder targeted, and the name was not edited |
+| `Rename` | Bookmarked, no other folder targeted, and the name was edited     |
+| `Move`   | Bookmarked and a different folder is targeted                     |
 | `Copy`   | Same as `Move`, but with Shift held                               |
+
+"No other folder targeted" includes highlighting the bookmark's own current folder,
+not just leaving the list unnarrowed.
+Shift is ignored when the highlighted folder is the one the bookmark is already in,
+so a bookmark cannot be duplicated into its own folder from the popup.
 
 The caption follows the Shift key and the name input live,
 and holding Shift applies whether the action is triggered

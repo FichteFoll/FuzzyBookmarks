@@ -99,7 +99,9 @@ do not edit `scripts/build.mjs` to register entry points.
 - Every user-visible bookmark mutation (create/move/copy/remove)
   goes through `applyCommit` in `src/lib/bookmark-actions.ts`.
 - The commit plan kind is decided exactly once,
-  in `resolveCommitKind` in `src/lib/bookmark-actions.ts`;
+  in `resolveCommitKind` in `src/lib/bookmark-actions.ts`,
+  which follows the resolved target folder from `resolveTarget`,
+  so no UI layer compares folders on its own;
   UI captions derive from that kind
   instead of re-deriving the create/update/rename/move/copy conditions.
 - `storage.local` keys: `settings`, `queryMemory`, `folderRecency`.
