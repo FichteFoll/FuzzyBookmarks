@@ -4,66 +4,61 @@ A Firefox extension for filing the current page as a bookmark
 into a folder chosen via fuzzy matching,
 entirely keyboard-driven.
 
-## About
+## Features
 
-FuzzyBookmarks replaces the click-heavy bookmark dialog
-with a popup built around a single fuzzy folder search:
-type a few characters of the target folder's path,
-pick a match with the arrow keys,
-and press Enter.
-Existing bookmarks are edited or moved instead of duplicated.
+- Fuzzy folder search over the full `/`-separated folder path,
+  powered by [fuzzysort](https://github.com/farzher/fuzzysort),
+  with matched characters highlighted.
+- Fully keyboard-driven: type, select, Enter. No mouse needed.
+- Recency-ordered folder list when the query is empty.
+- Edits or moves an existing bookmark instead of duplicating it,
+  with Shift+Enter to file a copy.
+- Creates missing folders from the query,
+  including nested chains such as `dev/js/new`.
+- Ctrl+D binding, both as an extension command
+  and via a content script for the cases Firefox does not hand over.
+- Toolbar icon reflects the current page's state:
+  filled when bookmarked,
+  a theme-following outline when not.
+- Configurable default folder for one-keypress filing.
 
 This addon was written with AI assistance.
 
-The toolbar icon reflects the current page's state:
-a filled bookmark when the page is bookmarked,
-and a monochrome outline that follows the browser's light or dark theme
-when it is not.
-
 ## Usage
 
-Open the popup on the page you want to bookmark;
-focus starts in the folder input,
-below the editable bookmark name,
-and the folder list below it is always visible.
-With an empty input it shows recently used folders first
-(and, when editing an existing bookmark, its current folder on top).
+1. Open the popup on the page you want to bookmark (Ctrl+D).
+   Focus starts in the folder input,
+   below the editable bookmark name.
+2. Type a few characters of the target folder's path.
+   The always-visible folder list filters as you type.
+3. Move the selection with ArrowUp/ArrowDown.
+4. Press Enter to file the bookmark into the selected folder.
 
-Type a few characters of the target folder's path
-to fuzzy-filter the list;
-matched characters are highlighted,
-and ArrowUp/ArrowDown move the selection.
-Press Enter anywhere in the form to file the bookmark
-into the selected folder.
-If the page is already bookmarked,
-Enter moves the existing bookmark there instead of duplicating it,
-and Shift+Enter files a copy while leaving the original untouched.
+Pressing Enter without typing or navigating
+files the bookmark into the configured default folder,
+or, for a page that is already bookmarked,
+saves it in place including name edits.
+
+### Commit actions
 
 The commit button's caption names the action it will perform:
-`Create` when the page is not bookmarked yet,
-`Save` when it is bookmarked and the folder list was not narrowed
-(the name is updated in place),
-`Move` when it is bookmarked and a folder was picked,
-and `Copy` when Shift is held in that same situation.
+
+| Caption  | When                                                                |
+| -------- | ------------------------------------------------------------------- |
+| `Create` | The page is not bookmarked yet                                      |
+| `Save`   | Bookmarked, folder list not narrowed (the name is updated in place) |
+| `Move`   | Bookmarked and a folder was picked                                  |
+| `Copy`   | Same as `Move`, but with Shift held                                 |
+
 The caption follows the Shift key live,
 and holding Shift applies whether the action is triggered
 by Enter or by clicking the button.
 
-Pressing Enter without typing or navigating
-files a new bookmark into the configured default folder,
-or saves an existing bookmark in place
-(name edits included).
-
-Tab and Shift+Tab cycle through
-the name input, the folder input,
-and the Remove and commit buttons.
-Remove deletes the bookmark being edited and closes the popup;
-it is disabled while the page is not bookmarked.
+### Creating folders
 
 When the query matches no folder exactly,
-the list ends with a `Create folder "<resolved path>"` entry,
-showing the full target path the query resolves to,
-including the default folder for queries that are not anchored elsewhere.
+the list ends with a `Create folder "<resolved path>"` entry
+showing the full target path the query resolves to.
 The query may be a `/`-separated path such as `dev/js/new`:
 the longest existing prefix is reused
 and the missing folders are created as a nested chain.
@@ -71,12 +66,20 @@ A leading `Menu`, `Toolbar`, `Other`, or `Mobile` segment
 anchors the path at that bookmark root;
 otherwise it is created under the default folder.
 
+### Other keys and controls
+
+Tab and Shift+Tab cycle through
+the name input, the folder input,
+and the Remove and commit buttons.
+Remove deletes the bookmark being edited and closes the popup;
+it is disabled while the page is not bookmarked.
+
 If several bookmarks exist for the current URL,
 a selector listing name, folder, and date added
 appears before the form;
 pick the bookmark to edit with ArrowUp/ArrowDown and Enter.
 
-## Keyboard shortcut
+### Keyboard shortcut
 
 The addon binds Ctrl+D in two complementary ways:
 
@@ -95,7 +98,7 @@ The addon binds Ctrl+D in two complementary ways:
   Pages that handle Ctrl+D themselves
   (e.g. a spreadsheet's fill-down) keep their behavior.
 
-## Settings
+### Settings
 
 The addon's options page (about:addons -> FuzzyBookmarks -> Preferences)
 offers a single setting: the default folder.
@@ -110,40 +113,19 @@ on a page that is not bookmarked yet.
 For a page that is already bookmarked,
 Enter without narrowing instead keeps the bookmark in its current folder.
 
+## Installation
+
+Signed `.xpi` builds are attached to the
+[GitHub releases](https://github.com/FichteFoll/FuzzyBookmarks/releases).
+Install one by dragging it into a Firefox window,
+or via about:addons -> gear icon -> "Install Add-on From File".
+
 ## Development
 
-The toolchain is pinned with [mise](https://mise.jdx.dev/)
-(node and pnpm versions in `mise.toml`),
-and dependencies are managed with pnpm:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the toolchain, package scripts,
+project layout and code conventions,
+and [docs/deploy.md](docs/deploy.md) for the release pipeline.
 
-```sh
-mise install
-pnpm install
-```
+## License
 
-### Package scripts
-
-| Script              | Purpose                                        |
-| ------------------- | ---------------------------------------------- |
-| `pnpm build`        | Bundle the extension into `dist/` with esbuild |
-| `pnpm watch`        | Rebuild on source changes                      |
-| `pnpm start`        | Run the built extension via `web-ext run`      |
-| `pnpm lint`         | ESLint (flat config, type-checked rules)       |
-| `pnpm format`       | Format everything with Prettier                |
-| `pnpm format:check` | Verify formatting                              |
-| `pnpm typecheck`    | `tsc --noEmit`                                 |
-| `pnpm test`         | Vitest unit tests                              |
-
-Tests run in Vitest's default `node` environment.
-DOM-dependent popup tests run against
-[happy-dom](https://github.com/capricorn86/happy-dom) instead,
-opted into per file with a `// @vitest-environment happy-dom` docblock
-on the file's first line.
-
-### web-ext workflow
-
-`pnpm build` writes a loadable extension to `dist/`;
-`web-ext` is configured via `web-ext-config.mjs` to use it as its source dir.
-Use `pnpm start` to launch a temporary Firefox profile with the addon,
-and `pnpm exec web-ext lint --source-dir dist` to validate the build output.
-For iterative work, run `pnpm watch` and `pnpm start` side by side.
+MIT, see [LICENSE](LICENSE).
