@@ -30,6 +30,7 @@ import {
   pickBookmark,
   FALLBACK_PARENT_ID,
 } from "./selector";
+import { showView, type PopupViews } from "./views";
 
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -150,14 +151,16 @@ function wireActions(context: CommitContext): void {
 }
 
 async function chooseBookmark(
+  views: PopupViews,
   bookmarks: browser.bookmarks.BookmarkTreeNode[],
   folders: FolderEntry[],
 ): Promise<browser.bookmarks.BookmarkTreeNode | undefined> {
   if (bookmarks.length <= 1) return bookmarks[0];
   const rows = buildSelectorRows(bookmarks, folders);
-  const picked = await pickBookmark(getElement("bookmark-selector"), rows);
-  getElement<HTMLInputElement>("folder-input").focus();
-  return bookmarks.find((bookmark) => bookmark.id === picked.bookmarkId);
+  showView(views, "select", views.select);
+  const choice = await pickBookmark(views.select, rows);
+  if (choice.kind === "new") return undefined;
+  return bookmarks.find((bookmark) => bookmark.id === choice.bookmarkId);
 }
 
 async function initPopup(): Promise<void> {
@@ -171,7 +174,13 @@ async function initPopup(): Promise<void> {
       url !== null ? browser.bookmarks.search({ url }) : [],
     ]);
 
-  const bookmark = await chooseBookmark(matchingBookmarks, folders);
+  const views: PopupViews = {
+    select: getElement("select-view"),
+    edit: getElement("edit-view"),
+  };
+  const bookmark = await chooseBookmark(views, matchingBookmarks, folders);
+  // Explicit focus: autofocus alone is unreliable in extension popups.
+  showView(views, "edit", getElement<HTMLInputElement>("folder-input"));
   const model = derivePopupModel(
     tab ?? { title: "", favIconUrl: undefined, url: undefined },
     bookmark ? [bookmark] : [],
@@ -251,7 +260,5 @@ async function initPopup(): Promise<void> {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Explicit focus: autofocus alone is unreliable in extension popups.
-  getElement<HTMLInputElement>("folder-input").focus();
   void initPopup();
 });

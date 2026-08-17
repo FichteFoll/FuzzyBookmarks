@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment happy-dom
+
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resolveCommit } from "../lib/bookmark-actions";
 import type { FolderEntry } from "../lib/folders";
@@ -6,7 +8,10 @@ import type { PickerItem, PickerState } from "./folder-picker";
 import {
   buildCommitInput,
   buildSelectorRows,
+  pickBookmark,
   type CommitFormState,
+  type SelectorChoice,
+  type SelectorRow,
 } from "./selector";
 
 function folder(id: string, path: string, parentId?: string): FolderEntry {
@@ -244,5 +249,148 @@ describe("buildCommitInput", () => {
 
     expect(input.selectedFolderId).toBeNull();
     expect(input.createFolder).toBeNull();
+  });
+});
+
+describe("pickBookmark", () => {
+  const rows: SelectorRow[] = [
+    {
+      bookmarkId: "b1",
+      title: "First",
+      folderPath: "Other/dev",
+      dateAdded: 2000,
+    },
+    {
+      bookmarkId: "b2",
+      title: "Second",
+      folderPath: "Menu/news",
+      dateAdded: 1000,
+    },
+  ];
+
+  const documentSpies: Array<(event: KeyboardEvent) => void> = [];
+
+  afterEach(() => {
+    for (const spy of documentSpies) {
+      document.removeEventListener("keydown", spy);
+    }
+    documentSpies.length = 0;
+    document.body.replaceChildren();
+  });
+
+  function setUp(): {
+    container: HTMLElement;
+    choice: Promise<SelectorChoice>;
+    documentSpy: ReturnType<typeof vi.fn>;
+  } {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const choice = pickBookmark(container, rows);
+    // Mirrors the document-level Enter handler that `wireActions` attaches
+    // as soon as the pick resolves.
+    const documentSpy = vi.fn();
+    document.addEventListener("keydown", documentSpy);
+    documentSpies.push(documentSpy);
+    return { container, choice, documentSpy };
+  }
+
+  function pressKey(container: HTMLElement, key: string): void {
+    container.dispatchEvent(
+      new KeyboardEvent("keydown", { key, bubbles: true }),
+    );
+  }
+
+  it("focuses its container", () => {
+    const { container } = setUp();
+
+    expect(document.activeElement).toBe(container);
+  });
+
+  it("does not set the container's hidden attribute when rendering; that is the caller's concern", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    container.hidden = true;
+
+    void pickBookmark(container, rows);
+
+    expect(container.hidden).toBe(true);
+  });
+
+  it("does not clear the container's hidden attribute when a choice resolves; that is the caller's concern", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    container.hidden = false;
+    const choice = pickBookmark(container, rows);
+
+    pressKey(container, "Enter");
+    await choice;
+
+    expect(container.hidden).toBe(false);
+  });
+
+  it("resolves with the selected bookmark on Enter without letting it reach document", async () => {
+    const { container, choice, documentSpy } = setUp();
+
+    pressKey(container, "Enter");
+
+    await expect(choice).resolves.toEqual({
+      kind: "existing",
+      bookmarkId: "b1",
+    });
+    expect(documentSpy).not.toHaveBeenCalled();
+  });
+
+  it("moves the selection on ArrowDown without letting it reach document", () => {
+    const { container, documentSpy } = setUp();
+
+    pressKey(container, "ArrowDown");
+
+    const options = container.querySelectorAll("li");
+    expect(options[0]?.getAttribute("aria-selected")).toBeNull();
+    expect(options[1]?.getAttribute("aria-selected")).toBe("true");
+    expect(documentSpy).not.toHaveBeenCalled();
+  });
+
+  it("renders the folder path on its own line, separate from the title", () => {
+    const { container } = setUp();
+
+    const firstRow = container.querySelector("li");
+    const title = firstRow?.querySelector(".selector-title");
+    const path = firstRow?.querySelector(".selector-path");
+
+    expect(path?.textContent).toBe("Other/dev");
+    expect(title?.querySelector(".selector-path")).toBeNull();
+  });
+
+  it("appends a new-bookmark row after the duplicate rows", () => {
+    const { container } = setUp();
+
+    const options = container.querySelectorAll("li");
+    const lastOption = options[options.length - 1];
+    expect(options).toHaveLength(rows.length + 1);
+    expect(lastOption?.id).toBe(`bookmark-option-${rows.length}`);
+    expect(lastOption?.className).toBe("selector-new");
+    expect(lastOption?.textContent).toBe("New bookmark for this page");
+  });
+
+  it("resolves { kind: 'new' } on Enter for the new-bookmark row", async () => {
+    const { container, choice } = setUp();
+
+    pressKey(container, "ArrowDown");
+    pressKey(container, "ArrowDown");
+    pressKey(container, "Enter");
+
+    await expect(choice).resolves.toEqual({ kind: "new" });
+  });
+
+  it("wraps ArrowUp from the first row onto the new-bookmark row", () => {
+    const { container } = setUp();
+
+    pressKey(container, "ArrowUp");
+
+    const newBookmarkOption = container.querySelector(".selector-new");
+    expect(newBookmarkOption?.getAttribute("aria-selected")).toBe("true");
+    const options = container.querySelectorAll("li");
+    expect(options[1]?.getAttribute("aria-selected")).toBeNull();
   });
 });

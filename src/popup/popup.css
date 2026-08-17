@@ -133,7 +133,7 @@ body {
   border-radius: 2px;
 }
 
-#bookmark-selector ul {
+#select-view ul {
   list-style: none;
   margin: 4px 0 8px;
   padding: 0;
@@ -142,30 +142,49 @@ body {
   border-radius: 4px;
 }
 
-#bookmark-selector li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+#select-view li {
+  display: block;
   padding: 4px 6px;
   cursor: pointer;
 }
 
-#bookmark-selector li[aria-selected="true"] {
+#select-view li[aria-selected="true"] {
   background: var(--selected-bg);
 }
 
-#bookmark-selector .selector-title {
-  flex: 1;
+#select-view .selector-title {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#bookmark-selector .selector-folder,
-#bookmark-selector .selector-date {
-  flex-shrink: 0;
+#select-view .selector-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 0.8rem;
   color: var(--muted-fg);
+}
+
+#select-view .selector-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#select-view .selector-date {
+  flex-shrink: 0;
+}
+
+#select-view .selector-new {
+  font-style: italic;
+  color: var(--muted-fg);
+  border-top: 1px solid var(--border);
+}
+
+#select-view .selector-new[aria-selected="true"] {
+  color: var(--fg);
 }
 
 .button-bar {

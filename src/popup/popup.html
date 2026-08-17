@@ -6,32 +6,36 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div id="bookmark-selector" hidden></div>
-    <div class="field-caption">
-      <label for="name-input">Name</label>
-      <span id="meta-date"></span>
-    </div>
-    <div class="name-row">
-      <img id="favicon" alt="" />
+    <!-- tabindex: the view switch focuses this container so the selector's
+         keys reach it without an inner focusable element. -->
+    <div id="select-view" tabindex="-1" hidden></div>
+    <div id="edit-view" hidden>
+      <div class="field-caption">
+        <label for="name-input">Name</label>
+        <span id="meta-date"></span>
+      </div>
+      <div class="name-row">
+        <img id="favicon" alt="" />
+        <input
+          id="name-input"
+          type="text"
+          placeholder="Name..."
+          autocomplete="off"
+        />
+      </div>
+      <label class="field-caption" for="folder-input">Location</label>
       <input
-        id="name-input"
+        id="folder-input"
         type="text"
-        placeholder="Name..."
+        placeholder="Folder..."
         autocomplete="off"
       />
-    </div>
-    <label class="field-caption" for="folder-input">Location</label>
-    <input
-      id="folder-input"
-      type="text"
-      placeholder="Folder..."
-      autocomplete="off"
-    />
-    <ul id="folder-list" role="listbox" tabindex="-1"></ul>
-    <p id="current-location" hidden></p>
-    <div class="button-bar">
-      <button id="btn-remove" type="button">Remove</button>
-      <button id="btn-commit" type="button" class="primary">Create</button>
+      <ul id="folder-list" role="listbox" tabindex="-1"></ul>
+      <p id="current-location" hidden></p>
+      <div class="button-bar">
+        <button id="btn-remove" type="button">Remove</button>
+        <button id="btn-commit" type="button" class="primary">Create</button>
+      </div>
     </div>
     <script type="module" src="main.js"></script>
   </body>
