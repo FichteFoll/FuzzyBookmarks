@@ -67,19 +67,3 @@ export function derivePopupModel(
     removeEnabled: true,
   };
 }
-
-export async function loadPopupModel(): Promise<PopupModel> {
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  const activeTab: PopupTab = tab ?? {
-    title: "",
-    favIconUrl: undefined,
-    url: undefined,
-  };
-
-  if (!activeTab.url) {
-    return derivePopupModel(activeTab, []);
-  }
-
-  const bookmarks = await browser.bookmarks.search({ url: activeTab.url });
-  return derivePopupModel(activeTab, bookmarks);
-}
