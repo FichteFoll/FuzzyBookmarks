@@ -66,7 +66,10 @@ scripts/build.mjs        esbuild: every src/*/main.ts is an entry point;
                          dist/manifest.json with the package.json version
 docs/deploy.md           release pipeline and AMO signing setup
 src/background/main.ts   event page (MV3 "background.scripts" in Firefox)
-src/popup/               popup.html, popup.css, main.ts, ...
+src/background/cache.ts  in-memory cache of the folder list and per-URL
+                         bookmark matches, served to the popup and
+                         invalidated on bookmark changes
+src/popup/               popup.html, popup.css, main.ts, render.ts, ...
 src/lib/                 pure logic modules, unit-tested
 dist/                    build output, gitignored; web-ext runs from here
 ```
@@ -104,6 +107,20 @@ do not edit `scripts/build.mjs` to register entry points.
   so no UI layer compares folders on its own;
   UI captions derive from that kind
   instead of re-deriving the create/update/rename/move/copy conditions.
+- The popup reads its folder list and its per-URL bookmark matches
+  through `src/lib/popup-data.ts`,
+  never with `bookmarks.getTree` or `bookmarks.search` of its own,
+  the one exception being `resolveTargetFolderId`,
+  which re-reads folders it just created.
+- The popup/background message protocol is defined
+  exactly once, in `src/lib/popup-data.ts`.
+- The background page owns the only cache of that data,
+  in `src/background/cache.ts`,
+  holds it in memory rather than in `storage.local`
+  so no browsing URL is persisted,
+  and invalidates it on every bookmark event
+  that can change the cached data,
+  namely `onCreated`, `onRemoved`, `onChanged` and `onMoved`.
 - `storage.local` keys: `settings`, `queryMemory`, `folderRecency`.
 - `package.json` is the single source of truth for the version;
   release it with `pnpm version`, never by editing a version by hand.

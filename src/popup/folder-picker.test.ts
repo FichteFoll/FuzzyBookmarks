@@ -306,12 +306,16 @@ describe("setupFolderPicker", () => {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  function mount(withCallback = true): {
+  function mount(
+    withCallback = true,
+    initialQuery = "",
+  ): {
     input: HTMLInputElement;
     list: HTMLUListElement;
     states: PickerState[];
   } {
     const input = document.createElement("input");
+    input.value = initialQuery;
     const list = document.createElement("ul");
     document.body.replaceChildren(input, list);
     const states: PickerState[] = [];
@@ -389,6 +393,15 @@ describe("setupFolderPicker", () => {
     li?.dispatchEvent(new MouseEvent("click"));
 
     expect(lastNarrowed(states)).toBe(true);
+  });
+
+  it("renders the list for a query the input already holds", async () => {
+    const { list, states } = mount(true, "js");
+
+    await flush();
+
+    expect(itemIds(states[states.length - 1]?.items ?? [])).toEqual(["a"]);
+    expect(list.textContent).toBe("dev/js");
   });
 
   it("works without an onStateChange callback", async () => {

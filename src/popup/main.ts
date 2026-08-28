@@ -14,16 +14,21 @@ import {
   resolveCreatePath,
   type FolderEntry,
 } from "../lib/folders";
+import { fetchBookmarksForUrl, fetchFolders } from "../lib/popup-data";
 import {
   getRecentFolderIds,
   recordFolderUse,
   rememberSelection,
 } from "../lib/query-memory";
-import { formatAbsoluteTime, formatRelativeTime } from "../lib/relative-time";
 import { getSettings } from "../lib/settings";
 import { setupCommitCaption, type CommitCaptionHandle } from "./commit-caption";
 import { setupFolderPicker, type FolderPickerHandle } from "./folder-picker";
 import { derivePopupModel, isTitleChanged, type PopupModel } from "./model";
+import {
+  applyBookmarkDetails,
+  renderTabBasics,
+  type PopupElements,
+} from "./render";
 import {
   buildCommitInput,
   buildSelectorRows,
@@ -91,6 +96,8 @@ async function resolveTargetFolderId(
   // applyCommit does not report the folders it created;
   // re-resolve the create path against a fresh folder list
   // to learn the deepest created folder's id.
+  // This deliberately bypasses the background cache: it may not have
+  // been invalidated yet, and this call wants the folders just created.
   const selected = context.picker.getSelectedItem();
   if (selected?.kind !== "create") return null;
   const folders = await listFolders();
@@ -166,51 +173,67 @@ async function chooseBookmark(
 async function initPopup(): Promise<void> {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   const url = tab?.url ?? null;
-  const [folders, recentFolderIds, settings, matchingBookmarks] =
-    await Promise.all([
-      listFolders(),
-      getRecentFolderIds(),
-      getSettings(),
-      url !== null ? browser.bookmarks.search({ url }) : [],
-    ]);
 
   const views: PopupViews = {
     select: getElement("select-view"),
     edit: getElement("edit-view"),
   };
-  const bookmark = await chooseBookmark(views, matchingBookmarks, folders);
+  const folderInput = getElement<HTMLInputElement>("folder-input");
+  const nameInput = getElement<HTMLInputElement>("name-input");
+  const elements: PopupElements = {
+    favicon: getElement<HTMLImageElement>("favicon"),
+    nameInput,
+    metaDate: getElement("meta-date"),
+    currentLocation: getElement("current-location"),
+    removeButton: getElement<HTMLButtonElement>("btn-remove"),
+  };
+  // First paint, from the tab alone: everything below waits on the folder list
+  // and the bookmark lookup, which the popup must not appear to wait for.
+  renderTabBasics(elements, tab ?? { title: "", favIconUrl: undefined });
   // Explicit focus: autofocus alone is unreliable in extension popups.
-  showView(views, "edit", getElement<HTMLInputElement>("folder-input"));
+  showView(views, "edit", folderInput);
+  // A name typed in that window must survive the bookmark data's arrival.
+  let nameEdited = false;
+  nameInput.addEventListener("input", () => {
+    nameEdited = true;
+  });
+
+  const [folders, recentFolderIds, settings, matchingBookmarks] =
+    await Promise.all([
+      fetchFolders(),
+      getRecentFolderIds(),
+      getSettings(),
+      url !== null ? fetchBookmarksForUrl(url) : [],
+    ]);
+
+  const bookmark = await chooseBookmark(views, matchingBookmarks, folders);
+  // Only bring the edit view back when the selector actually took it over.
+  // showView focuses, and the edit view has been usable since the first paint:
+  // refocusing here would yank the caret out of the name input mid-typing.
+  if (!views.select.hidden) {
+    showView(views, "edit", folderInput);
+  }
   const model = derivePopupModel(
     tab ?? { title: "", favIconUrl: undefined, url: undefined },
     bookmark ? [bookmark] : [],
   );
 
-  getElement<HTMLImageElement>("favicon").src = model.favIconUrl ?? "";
-  const nameInput = getElement<HTMLInputElement>("name-input");
-  nameInput.value = model.pageTitle;
-  getElement<HTMLButtonElement>("btn-remove").disabled = !model.removeEnabled;
-
-  const metaDate = getElement("meta-date");
-  metaDate.textContent = model.dateAdded
-    ? `created ${formatRelativeTime(model.dateAdded, Date.now())}`
-    : "";
-  metaDate.title = model.dateAdded ? formatAbsoluteTime(model.dateAdded) : "";
-
   const folderById = new Map<string, FolderEntry>(
     folders.map((folder) => [folder.id, folder]),
   );
-  const currentLocation = getElement("current-location");
-  if (model.folderId) {
-    currentLocation.textContent = `Current: ${folderById.get(model.folderId)?.path ?? ""}`;
-    currentLocation.removeAttribute("hidden");
-  }
+  applyBookmarkDetails(elements, model, {
+    folderPath: model.folderId
+      ? (folderById.get(model.folderId)?.path ?? "")
+      : null,
+    nameEdited,
+    now: Date.now(),
+  });
 
   // The picker and the caption observe each other, so the notification is
   // routed through an indirection the caption handle replaces below.
   let notifyCaption = (): void => {};
   const picker = setupFolderPicker({
-    input: getElement<HTMLInputElement>("folder-input"),
+    input: folderInput,
     list: getElement<HTMLUListElement>("folder-list"),
     folders,
     currentFolderId: model.folderId,

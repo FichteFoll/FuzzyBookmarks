@@ -1,5 +1,16 @@
 // FuzzyBookmarks background event page (MV3 "background.scripts").
 
+import { listFolders } from "../lib/folders";
+import { parsePopupDataRequest } from "../lib/popup-data";
+import { createBookmarkCache } from "./cache";
+
+// The only cache of the popup's bookmark data. It lives in this page's
+// memory, so no browsing URL is written to disk.
+const cache = createBookmarkCache({
+  loadFolders: listFolders,
+  searchUrl: (url) => browser.bookmarks.search({ url }),
+});
+
 async function openPopup(): Promise<void> {
   try {
     await browser.action.openPopup();
@@ -15,7 +26,17 @@ async function openPopup(): Promise<void> {
   }
 }
 
+// Returning a promise is how Firefox sends a response back to the sender;
+// returning undefined leaves the message to any other listener.
 browser.runtime.onMessage.addListener((message: unknown) => {
+  const request = parsePopupDataRequest(message);
+  if (request?.type === "get-folders") return cache.getFolders();
+  if (request?.type === "get-bookmarks") {
+    // An unsearchable URL answers with an empty list rather than rejecting
+    // the popup's send, which the popup could not tell from a missing page.
+    return cache.getBookmarksForUrl(request.url).catch(() => []);
+  }
+
   if ((message as { type?: unknown } | null)?.type !== "open-popup") return;
   void openPopup();
 });
@@ -24,7 +45,7 @@ const FILLED_ICON = "icons/fuzzybookmarks.svg";
 
 async function isBookmarked(url: string): Promise<boolean> {
   try {
-    const matches = await browser.bookmarks.search({ url });
+    const matches = await cache.getBookmarksForUrl(url);
     return matches.length > 0;
   } catch {
     // search() rejects for URLs it cannot parse (privileged pages, "about:").
@@ -69,9 +90,22 @@ browser.tabs.onActivated.addListener(({ tabId }) => {
   void browser.tabs.get(tabId).then((tab) => updateIcon(tabId, tab.url));
 });
 
-// onMoved cannot change whether a URL is bookmarked and is therefore skipped.
-browser.bookmarks.onCreated.addListener(() => void updateActiveTabs());
-browser.bookmarks.onRemoved.addListener(() => void updateActiveTabs());
-browser.bookmarks.onChanged.addListener(() => void updateActiveTabs());
+const onBookmarkMutation = () => {
+  cache.invalidate();
+  void updateActiveTabs();
+};
+
+browser.bookmarks.onCreated.addListener(onBookmarkMutation);
+browser.bookmarks.onRemoved.addListener(onBookmarkMutation);
+browser.bookmarks.onChanged.addListener(onBookmarkMutation);
+
+// A move rewrites the folder's own path, its parentId and every descendant
+// path, so the cached folder list must go; it cannot change whether a URL is
+// bookmarked, so the icons stay as they are. onChildrenReordered changes no
+// path and needs neither.
+browser.bookmarks.onMoved.addListener(() => cache.invalidate());
 
 void updateActiveTabs();
+// Warm the folder list on this page's wake, so the tree walk happens here
+// instead of on the popup's critical path.
+void cache.getFolders();
