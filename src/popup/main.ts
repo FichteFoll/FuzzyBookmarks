@@ -14,6 +14,7 @@ import {
   resolveCreatePath,
   type FolderEntry,
 } from "../lib/folders";
+import { fetchBookmarksForUrl, fetchFolders } from "../lib/popup-data";
 import {
   getRecentFolderIds,
   recordFolderUse,
@@ -91,6 +92,8 @@ async function resolveTargetFolderId(
   // applyCommit does not report the folders it created;
   // re-resolve the create path against a fresh folder list
   // to learn the deepest created folder's id.
+  // This deliberately bypasses the background cache: it may not have
+  // been invalidated yet, and this call wants the folders just created.
   const selected = context.picker.getSelectedItem();
   if (selected?.kind !== "create") return null;
   const folders = await listFolders();
@@ -168,10 +171,10 @@ async function initPopup(): Promise<void> {
   const url = tab?.url ?? null;
   const [folders, recentFolderIds, settings, matchingBookmarks] =
     await Promise.all([
-      listFolders(),
+      fetchFolders(),
       getRecentFolderIds(),
       getSettings(),
-      url !== null ? browser.bookmarks.search({ url }) : [],
+      url !== null ? fetchBookmarksForUrl(url) : [],
     ]);
 
   const views: PopupViews = {
