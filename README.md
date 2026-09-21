@@ -58,7 +58,10 @@ so a bookmark cannot be duplicated into its own folder from the popup.
 
 The caption follows the Shift key and the name input live,
 and holding Shift applies whether the action is triggered
-by Enter or by clicking the button.
+by Enter, by clicking the button,
+or by double-clicking a folder in the list.
+A single click only selects a folder;
+a double click selects it and commits right away.
 While a commit would change nothing at all
 (the caption stays `Save`),
 the button is disabled;

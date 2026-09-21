@@ -109,7 +109,9 @@ async function resolveTargetFolderId(
   return missingSegments.length === 0 ? parentId : null;
 }
 
-function wireActions(context: CommitContext): void {
+// Returns the commit trigger, so gestures outside the buttons (a double
+// click in the folder list) share the same re-entrancy guard.
+function wireActions(context: CommitContext): (copyRequested: boolean) => void {
   const removeButton = getElement<HTMLButtonElement>("btn-remove");
   const commitButton = getElement<HTMLButtonElement>("btn-commit");
 
@@ -155,6 +157,8 @@ function wireActions(context: CommitContext): void {
     if (event.repeat) return;
     runExclusive(() => commit(context, event.shiftKey));
   });
+
+  return (copyRequested) => runExclusive(() => commit(context, copyRequested));
 }
 
 async function chooseBookmark(
@@ -232,6 +236,9 @@ async function initPopup(): Promise<void> {
   // The picker and the caption observe each other, so the notification is
   // routed through an indirection the caption handle replaces below.
   let notifyCaption = (): void => {};
+  // Same indirection for the double-click commit: the trigger only exists
+  // once wireActions has run, which needs the picker.
+  let activateCommit: (copyRequested: boolean) => void = () => {};
   const picker = setupFolderPicker({
     input: folderInput,
     list: getElement<HTMLUListElement>("folder-list"),
@@ -242,6 +249,7 @@ async function initPopup(): Promise<void> {
       folderById.get(settings.defaultFolderId ?? FALLBACK_PARENT_ID)?.path ??
       "Other",
     onStateChange: () => notifyCaption(),
+    onActivate: (copyRequested) => activateCommit(copyRequested),
   });
   // wireActions runs after this, so it can report a busy commit back to the
   // caption through this gate without a further indirection.
@@ -272,7 +280,7 @@ async function initPopup(): Promise<void> {
   notifyCaption = () => caption.update();
 
   if (url === null) return;
-  wireActions({
+  activateCommit = wireActions({
     model,
     defaultFolderId: settings.defaultFolderId,
     picker,

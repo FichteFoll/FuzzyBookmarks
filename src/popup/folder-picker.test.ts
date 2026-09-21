@@ -313,12 +313,14 @@ describe("setupFolderPicker", () => {
     input: HTMLInputElement;
     list: HTMLUListElement;
     states: PickerState[];
+    activations: boolean[];
   } {
     const input = document.createElement("input");
     input.value = initialQuery;
     const list = document.createElement("ul");
     document.body.replaceChildren(input, list);
     const states: PickerState[] = [];
+    const activations: boolean[] = [];
     setupFolderPicker({
       input,
       list,
@@ -327,8 +329,11 @@ describe("setupFolderPicker", () => {
       recentFolderIds: [],
       createAnchorPath: "Other",
       onStateChange: withCallback ? (state) => states.push(state) : undefined,
+      onActivate: withCallback
+        ? (copyRequested) => activations.push(copyRequested)
+        : undefined,
     });
-    return { input, list, states };
+    return { input, list, states, activations };
   }
 
   function lastNarrowed(states: PickerState[]): boolean {
@@ -393,6 +398,29 @@ describe("setupFolderPicker", () => {
     li?.dispatchEvent(new MouseEvent("click"));
 
     expect(lastNarrowed(states)).toBe(true);
+  });
+
+  it("selects and activates the item a double click hits", async () => {
+    const { list, states, activations } = mount();
+    await flush();
+
+    const li = list.children[1];
+    expect(li).toBeDefined();
+    li?.dispatchEvent(new MouseEvent("dblclick"));
+
+    expect(states[states.length - 1]?.selectedIndex).toBe(1);
+    expect(activations).toEqual([false]);
+  });
+
+  it("requests a copy for a double click holding Shift", async () => {
+    const { list, activations } = mount();
+    await flush();
+
+    list.children[0]?.dispatchEvent(
+      new MouseEvent("dblclick", { shiftKey: true }),
+    );
+
+    expect(activations).toEqual([true]);
   });
 
   it("renders the list for a query the input already holds", async () => {

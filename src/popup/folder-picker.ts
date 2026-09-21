@@ -135,6 +135,7 @@ export interface FolderPickerOptions {
   recentFolderIds: string[];
   createAnchorPath: string;
   onStateChange?: (state: PickerState) => void;
+  onActivate?: (copyRequested: boolean) => void;
 }
 
 export interface FolderPickerHandle {
@@ -192,6 +193,12 @@ export function setupFolderPicker(
       renderHighlighted(li, item.entry.path, item.highlightRanges);
     }
     li.addEventListener("click", () => selectIndex(index));
+    // A double click selects and commits in one gesture; Shift copies,
+    // the same modifier the commit button and Enter honor.
+    li.addEventListener("dblclick", (event) => {
+      selectIndex(index);
+      options.onActivate?.(event.shiftKey);
+    });
     return li;
   };
 
