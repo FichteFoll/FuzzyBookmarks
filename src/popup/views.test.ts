@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { showView, type PopupViews } from "./views";
 
@@ -40,5 +40,51 @@ describe("showView", () => {
     expect(views.select.hidden).toBe(true);
     expect(views.edit.hidden).toBe(false);
     expect(document.activeElement).toBe(input);
+  });
+
+  describe("before the popup window has the focus", () => {
+    beforeEach(() => {
+      vi.spyOn(document, "hasFocus").mockReturnValue(false);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    // Simulates Firefox handing the panel the focus without restoring
+    // the element focused before.
+    function receiveWindowFocus(): void {
+      (document.activeElement as HTMLElement | null)?.blur();
+      window.dispatchEvent(new Event("focus"));
+    }
+
+    it("refocuses the target once the window receives the focus", () => {
+      const { views, input } = setupViews();
+
+      showView(views, "edit", input);
+      receiveWindowFocus();
+
+      expect(document.activeElement).toBe(input);
+    });
+
+    it("refocuses the target of the latest view switch", () => {
+      const { views, input } = setupViews();
+
+      showView(views, "edit", input);
+      showView(views, "select", views.select);
+      receiveWindowFocus();
+
+      expect(document.activeElement).toBe(views.select);
+    });
+
+    it("does not refocus on a later window focus", () => {
+      const { views, input } = setupViews();
+      showView(views, "edit", input);
+      receiveWindowFocus();
+
+      receiveWindowFocus();
+
+      expect(document.activeElement).not.toBe(input);
+    });
   });
 });
